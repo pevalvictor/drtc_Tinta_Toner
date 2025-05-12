@@ -3,10 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from dotenv import load_dotenv
+from datetime import datetime
 import os
 
 # Cargar variables de entorno
 load_dotenv()
+
 db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
@@ -28,10 +30,12 @@ def create_app():
     def load_user(user_id):
         return Usuario.query.get(int(user_id))
 
-    from .routes import register_routes
+    # 🔥 Mover esta importación AQUÍ, dentro de la función
+    from app.routes import register_routes
     register_routes(app)
 
-    from . import models
-    return app
+    @app.context_processor
+    def inject_now():
+        return {'now': datetime.now}
 
-   
+    return app

@@ -1,0 +1,136 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Reportes - Inventario Actual</h2>
+
+    <!-- Filtros -->
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <select id="filterTipo" class="form-select">
+                <option value="">-- Filtrar por Tipo --</option>
+                <option value="Tinta">Tinta</option>
+                <option value="Toner">Toner</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select id="filterMarca" class="form-select">
+                <option value="">-- Filtrar por Marca --</option>
+                {% for producto in productos|unique(attribute='marca') if producto.marca %}
+                <option value="{{ producto.marca }}">{{ producto.marca }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="date" id="filterFechaInicio" class="form-control" placeholder="Fecha Inicio">
+        </div>
+        <div class="col-md-3">
+            <input type="date" id="filterFechaFin" class="form-control" placeholder="Fecha Fin">
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <button id="applyFilters" class="btn btn-primary w-100">Aplicar Filtros</button>
+        </div>
+        <div class="col-md-6">
+            <button id="resetFilters" class="btn btn-secondary w-100">Restablecer Filtros</button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table id="reporteProductos" class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    <th>Color</th>
+                    <th>Stock</th>
+                    <th>Stock Mínimo</th>
+                    <th>Unidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for producto in productos %}
+                <tr>
+                    <td>{{ producto.id_producto }}</td>
+                    <td>{{ producto.nombre }}</td>
+                    <td>{{ producto.tipo or '-' }}</td>
+                    <td>{{ producto.marca or '-' }}</td>
+                    <td>{{ producto.modelo_impresora or '-' }}</td>
+                    <td>{{ producto.color or '-' }}</td>
+                    <td>{{ producto.stock }}</td>
+                    <td>{{ producto.stock_minimo }}</td>
+                    <td>{{ producto.unidad or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- DataTables Buttons para exportar -->
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+<script>
+$(document).ready(function() {
+    var table = $('#reporteProductos').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            { extend: 'excelHtml5', text: 'Exportar a Excel', title: 'Inventario_DRTC' },
+            { extend: 'pdfHtml5', text: 'Exportar a PDF', title: 'Inventario_DRTC', orientation: 'landscape', pageSize: 'A4' },
+            { extend: 'print', text: 'Imprimir', title: 'Inventario DRTC' }
+        ],
+        language: { url: "//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json" }
+    });
+
+    function aplicarFiltros() {
+        var tipo = $('#filterTipo').val();
+        var marca = $('#filterMarca').val();
+        var fechaInicio = $('#filterFechaInicio').val();
+        var fechaFin = $('#filterFechaFin').val();
+
+        table.column(2).search(tipo, true, false);
+        table.column(3).search(marca, true, false);
+
+        table.rows().every(function() {
+            var stock = parseInt(this.data()[6]);
+            var stockMinimo = parseInt(this.data()[7]);
+            var mostrar = true;
+
+            var fechaIngreso = ''; // NO SE ESTÁ GUARDANDO FECHA en tu tabla actual. (Aquí podrías agregar si luego almacenas fecha)
+
+            if (fechaInicio && fechaIngreso < fechaInicio) mostrar = false;
+            if (fechaFin && fechaIngreso > fechaFin) mostrar = false;
+
+            if (mostrar) {
+                $(this.node()).show();
+            } else {
+                $(this.node()).hide();
+            }
+        });
+    }
+
+    $('#applyFilters').click(function() {
+        aplicarFiltros();
+    });
+
+    $('#resetFilters').click(function() {
+        $('#filterTipo').val('');
+        $('#filterMarca').val('');
+        $('#filterFechaInicio').val('');
+        $('#filterFechaFin').val('');
+        table.search('').columns().search('').draw();
+        table.rows().show();
+    });
+});
+</script>
+{% endblock %}

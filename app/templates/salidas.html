@@ -1,0 +1,103 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3 class="text-center">Historial de Salidas de Productos</h3>
+    <div class="text-end mb-3">
+        <a href="{{ url_for('salidas.nueva_salida') }}" class="btn btn-success">Nueva Salida</a>
+    </div>
+    <div class="table-responsive">
+        <table id="salidasTable" class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Fecha de Salida</th>
+                    <th>Responsable</th>
+                    <th>Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for salida in salidas %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ salida.producto.nombre }}</td>
+                    <td>{{ salida.cantidad }}</td>
+                    <td>{{ salida.fecha_salida.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ salida.responsable }}</td>
+                    <td>{{ salida.observaciones or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Estilos y scripts de DataTables -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('#salidasTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: 'excelHtml5',
+                title: 'Salidas DRTC',
+                text: 'Exportar Excel',
+                className: 'btn btn-outline-success'
+            },
+            {
+                extend: 'pdfHtml5',
+                title: 'Salidas DRTC',
+                text: 'Exportar PDF',
+                className: 'btn btn-outline-danger',
+                orientation: 'landscape',
+                pageSize: 'A4',
+                customize: function(doc) {
+                    doc.styles.tableHeader.alignment = 'center';
+                    doc.content.splice(0, 0, {
+                        text: 'Fecha de generación: ' + new Date().toLocaleString(),
+                        alignment: 'right',
+                        margin: [0, 0, 0, 12],
+                        fontSize: 8
+                    });
+                }
+            },
+            {
+                text: 'Imprimir',
+                className: 'btn btn-outline-primary',
+                action: function () {
+                    var win = window.open('', '_blank');
+                    win.document.write('<html><head><title>Imprimir Salidas</title>');
+                    win.document.write('<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">');
+                    win.document.write('</head><body >');
+                    win.document.write('<h3 style="text-align:center;">Inventario DRTC - Salidas</h3>');
+                    win.document.write('<p style="text-align:right;">Fecha de generación: ' + new Date().toLocaleString() + '</p>');
+                    win.document.write($('#salidasTable')[0].outerHTML);
+                    win.document.write('</body></html>');
+                    win.document.close();
+                    setTimeout(function(){
+                        win.print();
+                        win.close();
+                    }, 1000);
+                }
+            }
+        ],
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+        }
+    });
+});
+</script>
+{% endblock %}

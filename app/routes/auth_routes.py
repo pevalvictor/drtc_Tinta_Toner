@@ -7,7 +7,7 @@ import traceback
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
-@auth_bp.route('/login', methods=['GET', 'POST'])
+@auth_bp.route('/login', methods=['GET', 'POST'])  
 def login():
     print("Entrando al login...")  
 
@@ -20,7 +20,7 @@ def login():
             password = request.form.get('password')
 
             if not username or not password:
-                print(" Campos vacíos o no enviados correctamente")
+                print("Campos vacíos o no enviados correctamente")
                 flash("Todos los campos son obligatorios")
                 return render_template('login.html')
 
@@ -30,7 +30,7 @@ def login():
             if user and check_password_hash(user.password_hash, password):
                 login_user(user)
                 print("✅ Login exitoso")
-                return redirect(url_for('productos.dashboard'))
+                return redirect(url_for('home.dashboard'))  # Asegúrate que 'productos' sea el nombre correcto del blueprint
             else:
                 print("Credenciales incorrectas")
                 flash('Credenciales incorrectas')
@@ -39,5 +39,11 @@ def login():
 
     except Exception as e:
         print("🚨 ERROR EN LOGIN:", repr(e))
-        traceback.print_exc()  # 🧠 Imprime la traza del error en consola
+        traceback.print_exc()
         raise e
+
+@auth_bp.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('auth.login'))

@@ -1,0 +1,102 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Tablero Principal - Inventario DRTC</h2>
+
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary shadow h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Productos Registrados</h5>
+                    <h3>{{ productos_total }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-success shadow h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Stock Total</h5>
+                    <h3>{{ stock_total }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-danger shadow h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Productos en Alerta</h5>
+                    <h3>{{ productos_bajo_stock }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card text-white bg-warning shadow h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Último Ingreso</h5>
+                    <h4>{{ ultimo_ingreso }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4 g-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-info shadow h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Productos Activos</h5>
+                    <h3>{{ productos_activos }} ({{ porcentaje_activos }}%)</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-white bg-secondary shadow h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Productos Inactivos</h5>
+                    <h3>{{ productos_inactivos }} ({{ porcentaje_inactivos }}%)</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-white bg-dark shadow h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Sin Stock</h5>
+                    <h3>{{ productos_sin_stock }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if top_productos_mas_usados %}
+    <div class="mt-5">
+        <h4 class="text-center mb-3">Top 5 Productos Más Usados</h4>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped text-center">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Producto</th>
+                        <th>Total Salidas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in top_productos_mas_usados %}
+                    <tr>
+                        <td>{{ item.nombre }}</td>
+                        <td>{{ item.total }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+
+
+    
+</div>
+{% endblock %}

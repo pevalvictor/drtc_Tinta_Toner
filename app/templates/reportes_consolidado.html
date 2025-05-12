@@ -1,0 +1,67 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Reporte Consolidado de Productos</h2>
+
+    <div class="table-responsive">
+        <table id="tablaConsolidado" class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    <th>Color</th>
+                    <th>Unidad</th>
+                    <th>Stock Inicial</th>
+                    <th>Total Ingresos</th>
+                    <th>Total Salidas</th>
+                    <th>Stock Actual</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in consolidado %}
+                <tr>
+                    <td>{{ item.id_producto }}</td>
+                    <td>{{ item.nombre }}</td>
+                    <td>{{ item.tipo or '-' }}</td>
+                    <td>{{ item.marca or '-' }}</td>
+                    <td>{{ item.modelo_impresora or '-' }}</td>
+                    <td>{{ item.color or '-' }}</td>
+                    <td>{{ item.unidad or '-' }}</td>
+                    <td>{{ item.stock_inicial }}</td>
+                    <td>{{ item.total_ingresos }}</td>
+                    <td>{{ item.total_salidas }}</td>
+                    <td>{{ item.stock_actual }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- DataTables Buttons -->
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('#tablaConsolidado').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            { extend: 'excelHtml5', text: 'Exportar a Excel', title: 'Consolidado_Inventario_DRTC' },
+            { extend: 'pdfHtml5', text: 'Exportar a PDF', title: 'Consolidado_Inventario_DRTC', orientation: 'landscape', pageSize: 'A4' },
+            { extend: 'print', text: 'Imprimir', title: 'Consolidado de Inventario - DRTC' }
+        ],
+        language: { url: "//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json" }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Indicadores de Inventario</h2>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <canvas id="kpiDonut"></canvas>
+        </div>
+        <div class="col-md-6 mb-4">
+            <canvas id="kpiBar"></canvas>
+        </div>
+    </div>
+
+    <div class="row mt-4 text-center">
+        <div class="col-md-6">
+            <div class="alert alert-primary" role="alert">
+                Total de Productos Registrados: <strong>{{ total_productos }}</strong>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="alert alert-success" role="alert">
+                Stock Total Disponible: <strong>{{ stock_total }}</strong> unidades
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js ya está incluido en layout.html -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico Donut
+    const ctxDonut = document.getElementById('kpiDonut').getContext('2d');
+    new Chart(ctxDonut, {
+        type: 'doughnut',
+        data: {
+            labels: ['Stock Normal', 'Stock Bajo'],
+            datasets: [{
+                data: [{{ productos_normales }}, {{ productos_alerta }}],
+                backgroundColor: ['#28a745', '#dc3545'],
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: true,
+                    text: 'Distribución de Stock'
+                }
+            }
+        }
+    });
+
+    // Gráfico Barras
+    const ctxBar = document.getElementById('kpiBar').getContext('2d');
+    new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: ['Stock Normal', 'Stock Bajo'],
+            datasets: [{
+                label: 'Cantidad de Productos',
+                data: [{{ productos_normales }}, {{ productos_alerta }}],
+                backgroundColor: ['#28a745', '#dc3545'],
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: 'Cantidad de Productos según Estado'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

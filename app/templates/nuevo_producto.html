@@ -1,0 +1,116 @@
+{% extends 'layout.html' %}
+{% block content %}
+
+<div class="container mt-4">
+  <h3 class="text-center mb-4">Gestión de Productos</h3>
+
+  <div class="text-end mb-3">
+    <a href="{{ url_for('productos.nuevo_producto') }}" class="btn btn-success btn-sm">
+      <i class="bi bi-plus-circle"></i> Nuevo Producto
+    </a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle" id="tablaProductos">
+      <thead class="table-dark text-center">
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th>Stock</th>
+          <th>Stock Mínimo</th>
+          <th>Unidad</th>
+          <th>Activo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for producto in productos %}
+        <tr id="fila-producto-{{ producto.id_producto }}">
+          <td>{{ producto.id_producto }}</td>
+          <td>{{ producto.nombre }}</td>
+          <td>{{ producto.tipo.nombre_tipo }}</td>
+          <td>{{ producto.stock }}</td>
+          <td>{{ producto.stock_minimo }}</td>
+          <td>{{ producto.unidad or '-' }}</td>
+          <td>{{ 'Sí' if producto.activo else 'No' }}</td>
+          <td class="text-center">
+            <button class="btn btn-primary btn-sm editar-btn" data-id="{{ producto.id_producto }}">
+              <i class="bi bi-pencil-square"></i>
+            </button>
+            <form action="{{ url_for('productos.eliminar_producto', id_producto=producto.id_producto) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar producto?')">
+              <button class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="modalEditarProducto" tabindex="-1" aria-labelledby="modalEditarProductoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content" id="modalEditarContent">
+      <!-- El contenido se carga dinámicamente -->
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const modal = new bootstrap.Modal(document.getElementById('modalEditarProducto'));
+  const modalContent = document.getElementById("modalEditarContent");
+
+  document.querySelectorAll('.editar-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const id = this.dataset.id;
+      fetch(`/productos/editar/${id}`)
+        .then(resp => resp.text())
+        .then(html => {
+          modalContent.innerHTML = html;
+          modal.show();
+        })
+        .catch(err => {
+          console.error("Error al cargar modal de edición:", err);
+          alert("Error al cargar el formulario de edición.");
+        });
+    });
+  });
+});
+
+function actualizarFilaProducto(data) {
+  const fila = document.querySelector(`#fila-producto-${data.id}`);
+  if (fila) {
+    fila.innerHTML = `
+      <td>${data.id}</td>
+      <td>${data.nombre}</td>
+      <td>${data.tipo}</td>
+      <td>${data.stock}</td>
+      <td>${data.stock_minimo}</td>
+      <td>${data.unidad || '-'}</td>
+      <td>${data.activo ? 'Sí' : 'No'}</td>
+      <td class="text-center">
+        <button class="btn btn-primary btn-sm editar-btn" data-id="${data.id}">
+          <i class="bi bi-pencil-square"></i>
+        </button>
+        <form action="/productos/eliminar/${data.id}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar producto?')">
+          <button class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+        </form>
+      </td>
+    `;
+    fila.querySelector('.editar-btn').addEventListener('click', function () {
+      const id = this.dataset.id;
+      fetch(`/productos/editar/${id}`)
+        .then(resp => resp.text())
+        .then(html => {
+          document.getElementById("modalEditarContent").innerHTML = html;
+          bootstrap.Modal.getOrCreateInstance(document.getElementById("modalEditarProducto")).show();
+        });
+    });
+  }
+}
+</script>
+
+{% endblock %}

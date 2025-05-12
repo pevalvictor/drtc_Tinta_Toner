@@ -1,0 +1,188 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3 class="text-center mb-4">LISTADO DE PRODUCTOS</h3>
+
+  <div class="text-end mb-3">
+    <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto">
+      <i class="bi bi-plus-circle"></i> Nuevo Producto
+    </button>
+  </div>
+
+  <table id="tablaProductos" class="table table-bordered table-striped table-hover align-middle text-center w-100">
+    <thead style="background-color: #925c5e; color: #1e0d0d;">
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Tipo</th>
+        <th>Marca</th>
+        <th>Modelo</th>
+        <th>Color</th>
+        <th>Stock</th>
+        <th>Unidad</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for producto in productos %}
+      <tr>
+        <td>{{ producto.id_producto }}</td>
+        <td>{{ producto.nombre }}</td>
+        <td>{{ producto.tipo_producto.nombre_tipo }}</td>
+        <td>{{ producto.marca or '-' }}</td>
+        <td>{{ producto.modelo_impresora or '-' }}</td>
+        <td>{{ producto.color or '-' }}</td>
+        <td class="{% if producto.stock == 0 %}text-danger{% elif producto.stock <= 5 %}text-warning{% else %}text-success{% endif %}">{{ producto.stock }}</td>
+        <td>{{ producto.unidad or '-' }}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary editar-btn" data-id="{{ producto.id_producto }}">
+            <i class="bi bi-pencil-square"></i>
+          </button>
+          <form method="POST" action="{{ url_for('productos.eliminar_producto', id_producto=producto.id_producto) }}" style="display:inline;" onsubmit="return confirm('¿Deseas eliminar este producto?');">
+            <button type="submit" class="btn btn-sm btn-outline-danger">
+              <i class="bi bi-trash3"></i>
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal: Nuevo Producto -->
+<div class="modal fade" id="modalNuevoProducto" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <form id="formNuevoProducto" method="POST" action="{{ url_for('productos.nuevo_producto') }}">
+        <div class="modal-header">
+          <h5 class="modal-title">Registrar Nuevo Producto</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Nombre *</label>
+              <input type="text" name="nombre" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Tipo *</label>
+              <select name="id_tipo" class="form-select" required>
+                <option value="">Seleccione tipo</option>
+                {% for tipo in tipos_productos %}
+                  <option value="{{ tipo.id_tipo }}">{{ tipo.nombre_tipo }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Marca</label>
+              <input type="text" name="marca" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Modelo Impresora</label>
+              <input type="text" name="modelo_impresora" class="form-control">
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Color</label>
+              <input type="text" name="color" class="form-control">
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Stock *</label>
+              <input type="number" name="stock" class="form-control" min="0" required>
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Stock Mínimo *</label>
+              <input type="number" name="stock_minimo" class="form-control" min="0" required>
+            </div>
+            <div class="col-md-3 mb-3">
+              <label class="form-label">Unidad</label>
+              <input type="text" name="unidad" class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-warning text-dark" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle"></i> Cancelar
+          </button>
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle"></i> Registrar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Edición -->
+<div class="modal fade" id="modalEditarProducto" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content" id="modalEditarContent"></div>
+  </div>
+</div>
+
+<!-- Toast Error -->
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+  <div id="stockAlert" class="toast bg-danger text-white" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-body d-flex justify-content-between align-items-center">
+      <div><i class="bi bi-exclamation-triangle-fill"></i> Stock no puede ser menor que el stock mínimo.</div>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function () {
+    $('#tablaProductos').DataTable({
+      language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json' },
+      pageLength: 10,
+      lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'Todos']]
+    });
+
+    const toast = new bootstrap.Toast(document.getElementById('stockAlert'));
+
+    document.getElementById("formNuevoProducto").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const form = this;
+      const stock = parseInt(form.stock.value);
+      const stockMin = parseInt(form.stock_minimo.value);
+
+      if (stock < stockMin) {
+        toast.show();
+        return;
+      }
+
+      fetch(form.action, {
+        method: "POST",
+        body: new FormData(form)
+      })
+      .then(resp => resp.json())
+      .then(data => {
+        if (data.status === "success") {
+          alert(data.mensaje);
+          location.reload();
+        } else {
+          alert(data.mensaje);
+        }
+      })
+      .catch(() => alert("Error inesperado al registrar producto."));
+    });
+
+    document.querySelectorAll(".editar-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        fetch(`/productos/editar/${id}`)
+          .then(res => res.text())
+          .then(html => {
+            document.getElementById("modalEditarContent").innerHTML = html;
+            new bootstrap.Modal(document.getElementById("modalEditarProducto")).show();
+          })
+          .catch(err => {
+            console.error(err);
+            alert("Error al cargar el formulario de edición.");
+          });
+      });
+    });
+  });
+</script>
+{% endblock %}

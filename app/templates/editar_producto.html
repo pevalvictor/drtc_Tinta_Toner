@@ -1,0 +1,96 @@
+<form id="formEditarProducto" method="POST" action="{{ url_for('productos.editar_producto', id_producto=producto.id_producto) }}">
+  <div class="modal-header">
+    <h5 class="modal-title">EDITAR PRODUCTO</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+  </div>
+
+  <div class="modal-body">
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Nombre *</label>
+        <input type="text" class="form-control" name="nombre" value="{{ producto.nombre }}" required>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Tipo *</label>
+        <select name="id_tipo" class="form-select" required>
+          {% for tipo in tipos_productos %}
+            <option value="{{ tipo.id_tipo }}" {% if tipo.id_tipo == producto.id_tipo %}selected{% endif %}>
+              {{ tipo.nombre_tipo }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Marca</label>
+        <input type="text" class="form-control" name="marca" value="{{ producto.marca or '' }}">
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Modelo Impresora</label>
+        <input type="text" class="form-control" name="modelo_impresora" value="{{ producto.modelo_impresora or '' }}">
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Color</label>
+        <input type="text" class="form-control" name="color" value="{{ producto.color or '' }}">
+      </div>
+
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Stock *</label>
+        <input type="number" class="form-control" name="stock" min="0" value="{{ producto.stock }}" required>
+      </div>
+
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Stock Mínimo *</label>
+        <input type="number" class="form-control" name="stock_minimo" min="0" value="{{ producto.stock_minimo }}" required>
+      </div>
+
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Unidad</label>
+        <input type="text" class="form-control" name="unidad" value="{{ producto.unidad or '' }}">
+      </div>
+
+      <div class="col-md-3 mb-3 d-flex align-items-center">
+        <div class="form-check mt-4">
+          <input type="checkbox" class="form-check-input" name="activo" id="activo" {% if producto.activo %}checked{% endif %}>
+          <label for="activo" class="form-check-label">Activo</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+  </div>
+</form>
+
+<script>
+document.getElementById("formEditarProducto").addEventListener("submit", function (e) {
+  e.preventDefault();
+  const form = this;
+  const formData = new FormData(form);
+
+  fetch(form.action, {
+    method: "POST",
+    body: formData
+  })
+  .then(resp => resp.json())
+  .then(data => {
+    if (data.status === "success") {
+      alert(data.mensaje);
+      const modal = bootstrap.Modal.getInstance(document.getElementById("modalEditarProducto"));
+      modal.hide();
+      location.reload();  // ← puedes reemplazar por actualizar la fila sin recarga
+    } else {
+      alert("❌ Error: " + data.mensaje);
+    }
+  })
+  .catch(err => {
+    console.error("Error en actualización:", err);
+    alert("Error inesperado.");
+  });
+});
+</script>

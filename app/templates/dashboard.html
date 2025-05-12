@@ -1,0 +1,40 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container">
+    <h2 class="text-center mb-4">Panel de Control</h2>
+    
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Productos</h5>
+                    <p class="card-text">Gestiona los productos en inventario.</p>
+                    <a href="{{ url_for('productos.dashboard') }}" class="btn btn-primary">Ver productos</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Ingresos</h5>
+                    <p class="card-text">Registra nuevas entradas de stock.</p>
+                    <a href="{{ url_for('ingresos.dashboard') }}" class="btn btn-success">Registrar ingreso</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Salidas</h5>
+                    <p class="card-text">Controla los egresos de productos.</p>
+                    <a href="{{ url_for('salidas.dashboard') }}" class="btn btn-danger">Registrar salida</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

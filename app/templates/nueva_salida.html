@@ -1,0 +1,34 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+    <h2 class="text-center mb-4">Registrar Nueva Salida</h2>
+    <form method="POST">
+        <div class="mb-3">
+            <label class="form-label">Producto</label>
+            <select name="producto_id" class="form-select" required>
+                <option value="">Seleccione un producto</option>
+                {% for producto in productos %}
+                    <option value="{{ producto.id_producto }}">{{ producto.nombre }} (Stock: {{ producto.stock }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Cantidad</label>
+            <input type="number" name="cantidad" class="form-control" min="1" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Responsable</label>
+            <input type="text" name="responsable" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Observaciones</label>
+            <textarea name="observaciones" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="text-center">
+            <button type="submit" class="btn btn-warning me-2">Registrar Salida</button>
+            <a href="{{ url_for('salidas.dashboard') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

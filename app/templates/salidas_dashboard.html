@@ -1,0 +1,111 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Reportes - Salidas de Productos</h2>
+
+    <!-- Filtros -->
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <input type="date" id="filterFechaInicio" class="form-control" placeholder="Fecha Inicio">
+        </div>
+        <div class="col-md-3">
+            <input type="date" id="filterFechaFin" class="form-control" placeholder="Fecha Fin">
+        </div>
+        <div class="col-md-6 d-flex">
+            <button id="applyFilters" class="btn btn-primary w-100 me-2">Aplicar Filtros</button>
+            <button id="resetFilters" class="btn btn-secondary w-100">Restablecer Filtros</button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table id="tablaSalidas" class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Fecha de Salida</th>
+                    <th>Destino</th>
+                    <th>Responsable</th>
+                    <th>Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for salida in salidas %}
+                <tr>
+                    <td>{{ salida.id_salida }}</td>
+                    <td>{{ salida.producto.nombre }}</td>
+                    <td>{{ salida.cantidad }}</td>
+                    <td>{{ salida.fecha_salida.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ salida.destino or '-' }}</td>
+                    <td>{{ salida.responsable or '-' }}</td>
+                    <td>{{ salida.observaciones or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- DataTables Buttons -->
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+<script>
+$(document).ready(function() {
+    var table = $('#tablaSalidas').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            { extend: 'excelHtml5', text: 'Exportar a Excel', title: 'Salidas_DRTC' },
+            { extend: 'pdfHtml5', text: 'Exportar a PDF', title: 'Salidas_DRTC', orientation: 'landscape', pageSize: 'A4' },
+            { extend: 'print', text: 'Imprimir', title: 'Salidas de Productos - DRTC' }
+        ],
+        language: { url: "//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json" }
+    });
+
+    function aplicarFiltros() {
+        var fechaInicio = $('#filterFechaInicio').val();
+        var fechaFin = $('#filterFechaFin').val();
+
+        table.rows().every(function() {
+            var fecha = this.data()[3]; // Fecha en formato 'dd/mm/yyyy'
+            var partes = fecha.split('/');
+            var fechaSalida = new Date(partes[2], partes[1] - 1, partes[0]); // Año, mes, día
+
+            var mostrar = true;
+            if (fechaInicio) {
+                var inicio = new Date(fechaInicio);
+                if (fechaSalida < inicio) mostrar = false;
+            }
+            if (fechaFin) {
+                var fin = new Date(fechaFin);
+                if (fechaSalida > fin) mostrar = false;
+            }
+
+            if (mostrar) {
+                $(this.node()).show();
+            } else {
+                $(this.node()).hide();
+            }
+        });
+    }
+
+    $('#applyFilters').click(function() {
+        aplicarFiltros();
+    });
+
+    $('#resetFilters').click(function() {
+        $('#filterFechaInicio').val('');
+        $('#filterFechaFin').val('');
+        table.search('').columns().search('').draw();
+        table.rows().show();
+    });
+});
+</script>
+{% endblock %}
