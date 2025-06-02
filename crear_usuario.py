@@ -1,10 +1,9 @@
-# crear_usuario.py
 from app import db
 from app.models import Usuario
 from werkzeug.security import generate_password_hash
-from app import create_app  # solo si tienes create_app() en __init__.py
+from app import create_app  
 
-app = create_app()  # si no tienes create_app, omite esta línea y usa directamente db.create_all()
+app = create_app()  
 
 with app.app_context():
     usuario_existente = Usuario.query.filter_by(usuario='admin').first()
@@ -17,6 +16,6 @@ with app.app_context():
         )
         db.session.add(nuevo_usuario)
         db.session.commit()
-        print("✅ Usuario creado correctamente")
+        print(" Usuario creado correctamente")
     else:
-        print("⚠️ El usuario 'admin' ya existe")
+        print(" El usuario 'admin' ya existe")

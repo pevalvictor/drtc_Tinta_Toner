@@ -1,0 +1,99 @@
+<!-- Modal de Registro de Ingreso -->
+<div class="modal fade" id="modalIngreso" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="formIngreso" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title">Registrar Ingreso</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body row g-2">
+          <div class="col-md-6">
+            <label class="form-label">Tipo de Producto</label>
+            <select name="tipo_producto" class="form-select form-select-sm" required>
+              <option value="Toner">Toner</option>
+              <option value="Tinta">Tinta</option>
+            </select>
+
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Marca</label>
+            <input name="marca" class="form-control form-control-sm" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Modelo</label>
+            <input name="modelo" class="form-control form-control-sm" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Color</label>
+            <input name="color" class="form-control form-control-sm">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Cantidad</label>
+            <input name="cantidad" type="number" class="form-control form-control-sm" required oninput="calcularTotal()">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Unidad</label>
+            <input name="unidad" class="form-control form-control-sm" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Precio</label>
+            <input name="precio" type="number" step="0.01" class="form-control form-control-sm" required oninput="calcularTotal()">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Total (S/)</label>
+            <input name="total" id="total" class="form-control form-control-sm" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Fecha de Ingreso</label>
+            <input name="fecha_ingreso" type="date" class="form-control form-control-sm" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Stock</label>
+            <input name="stock" type="number" class="form-control form-control-sm" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Stock Mínimo</label>
+            <input name="stock_minimo" type="number" class="form-control form-control-sm" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Responsable</label>
+            <input name="responsable" class="form-control form-control-sm" required>
+          </div>
+          <div class="col-md-12">
+            <label class="form-label">Observaciones</label>
+            <textarea name="observaciones" class="form-control form-control-sm" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer justify-content-end">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success btn-sm ms-2">Registrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function calcularTotal() {
+  const cantidad = parseFloat(document.querySelector('[name="cantidad"]').value) || 0;
+  const precio = parseFloat(document.querySelector('[name="precio"]').value) || 0;
+  document.getElementById('total').value = (cantidad * precio).toFixed(2);
+}
+
+document.getElementById("formIngreso").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  fetch("/ingresos/registrar_ajax", {
+    method: "POST",
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message);
+    if (data.success) {
+      window.location.reload();
+    }
+  });
+});
+</script>

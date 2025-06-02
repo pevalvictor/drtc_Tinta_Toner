@@ -61,6 +61,20 @@
             text-align: center;
             font-weight: bold;
         }
+
+
+          .dropdown-menu {
+    background-color: #ffffff !important; /* fondo blanco */
+  }
+
+    .dropdown-menu .dropdown-item {
+        color: #212529 !important; /* texto oscuro forzado */
+    }
+
+    .dropdown-menu .dropdown-item:hover {
+        background-color: #9b2626 !important; /* fondo al pasar el cursor */
+        color: #eee8e8 !important; /* mantener texto oscuro en hover */
+    }
     </style>
 </head>
 
@@ -113,7 +127,7 @@
 
     <!-- FOOTER -->
     <footer>
-        <div>© {{ current_year if current_year is defined else '2024' }} DRTC - Todos los derechos reservados</div>
+        <div>© {{ current_year if current_year is defined else '2025' }} DRTC - Todos los derechos reservados</div>
     </footer>
 
     <!-- FLASH TOASTS -->
@@ -138,5 +152,29 @@
         </script>
         {% endif %}
     {% endwith %}
+
+            <div id="toast" class="position-fixed top-0 end-0 p-3" style="z-index: 1055; display: none;">
+                <div class="toast align-items-center text-white bg-success border-0 show" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">Modificación exitosa</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="ocultarToast()"></button>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+            function mostrarToast() {
+            const toast = document.getElementById("toast");
+            toast.style.display = "block";
+            setTimeout(() => {
+                toast.style.display = "none";
+            }, 3000);
+            }
+
+            function ocultarToast() {
+            document.getElementById("toast").style.display = "none";
+            }
+            </script>
+
 </body>
 </html>

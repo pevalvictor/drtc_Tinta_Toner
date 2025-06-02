@@ -14,4 +14,3 @@ def register_routes(app):
     app.register_blueprint(productos_bp)
     app.register_blueprint(reportes_bp)
     app.register_blueprint(salidas_bp)
-    

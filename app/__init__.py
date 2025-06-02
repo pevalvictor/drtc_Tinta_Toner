@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 import os
 
-# Cargar variables de entorno
+#  variables de entorno
 load_dotenv()
 
 db = SQLAlchemy()
@@ -30,7 +30,6 @@ def create_app():
     def load_user(user_id):
         return Usuario.query.get(int(user_id))
 
-    # 🔥 Mover esta importación AQUÍ, dentro de la función
     from app.routes import register_routes
     register_routes(app)
 

@@ -1,25 +1,14 @@
 {% extends 'layout.html' %}
-
 {% block content %}
 <div class="container mt-4">
-    <h2 class="text-center mb-4">Reportes - Salidas de Productos</h2>
+    <h2 class="text-center mb-4">SALIDA DE PRODUCTOS</h2>
 
-    <!-- Filtros -->
-    <div class="row mb-3">
-        <div class="col-md-3">
-            <input type="date" id="filterFechaInicio" class="form-control" placeholder="Fecha Inicio">
-        </div>
-        <div class="col-md-3">
-            <input type="date" id="filterFechaFin" class="form-control" placeholder="Fecha Fin">
-        </div>
-        <div class="col-md-6 d-flex">
-            <button id="applyFilters" class="btn btn-primary w-100 me-2">Aplicar Filtros</button>
-            <button id="resetFilters" class="btn btn-secondary w-100">Restablecer Filtros</button>
-        </div>
+    <div class="text-end mb-3">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalSalida">Registrar Salida</button>
     </div>
 
     <div class="table-responsive">
-        <table id="tablaSalidas" class="table table-bordered table-hover">
+        <table class="table table-bordered table-hover text-center" id="tablaSalidas">
             <thead class="table-dark">
                 <tr>
                     <th>ID</th>
@@ -37,10 +26,10 @@
                     <td>{{ salida.id_salida }}</td>
                     <td>{{ salida.producto.nombre }}</td>
                     <td>{{ salida.cantidad }}</td>
-                    <td>{{ salida.fecha_salida.strftime('%d/%m/%Y') }}</td>
-                    <td>{{ salida.destino or '-' }}</td>
-                    <td>{{ salida.responsable or '-' }}</td>
-                    <td>{{ salida.observaciones or '-' }}</td>
+                    <td>{{ salida.fecha_salida.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ salida.destino }}</td>
+                    <td>{{ salida.responsable }}</td>
+                    <td>{{ salida.observaciones }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -48,63 +37,135 @@
     </div>
 </div>
 
-<!-- DataTables Buttons -->
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<!-- Modal de registro de salida -->
+<div class="modal fade" id="modalSalida" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="formSalida" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Registrar Salida</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body row g-2">
+        <div class="col-md-12">
+          <label>Producto</label>
+          <select name="id_producto" class="form-select form-select-sm" id="id_producto" required>
+            <option value="">Seleccionar...</option>
+            {% for producto in productos %}
+              <option value="{{ producto.id_producto }}">{{ producto.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6"><label>Tipo</label><input name="tipo" id="tipo" class="form-control form-control-sm" readonly></div>
+        <div class="col-md-6"><label>Marca</label><input name="marca" id="marca" class="form-control form-control-sm" readonly></div>
+        <div class="col-md-6"><label>Color</label><input name="color" id="color" class="form-control form-control-sm" readonly></div>
+        <div class="col-md-6"><label>Unidad</label><input name="unidad" id="unidad" class="form-control form-control-sm" readonly></div>
+        <div class="col-md-6"><label>Stock Disponible</label><input id="stock_disponible" class="form-control form-control-sm bg-light" readonly></div>
+        <div class="col-md-6">
+          <label>Cantidad</label>
+          <input type="number" name="cantidad" id="cantidad" class="form-control form-control-sm" required>
+        </div>
+        <div class="col-md-6">
+          <label>Fecha</label>
+          <input type="date" name="fecha_salida" class="form-control form-control-sm" value="{{ current_date }}" required>
+        </div>
+        <div class="col-md-12"><label>Destino</label><input name="destino" class="form-control form-control-sm" required></div>
+        <div class="col-md-12"><label>Responsable</label><input name="responsable" class="form-control form-control-sm" required></div>
+        <div class="col-md-12"><label>Observaciones</label><textarea name="observaciones" class="form-control form-control-sm" rows="2"></textarea></div>
+      </div>
+      <div class="modal-footer justify-content-end">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm">Registrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast Exitoso -->
+<div id="toastSalida" class="position-fixed top-0 end-0 p-3" style="z-index: 1055; display: none;">
+  <div class="toast align-items-center text-white bg-success border-0 show" role="alert">
+    <div class="d-flex">
+      <div class="toast-body">Salida registrada correctamente.</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="ocultarToast()"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Error -->
+<div id="toastError" class="position-fixed top-0 end-0 p-3" style="z-index: 1056; display: none;">
+  <div class="toast align-items-center text-white bg-danger border-0 show" role="alert">
+    <div class="d-flex">
+      <div class="toast-body" id="errorMsg">Error.</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="ocultarToastError()"></button>
+    </div>
+  </div>
+</div>
 
 <script>
-$(document).ready(function() {
-    var table = $('#tablaSalidas').DataTable({
-        dom: 'Bfrtip',
-        buttons: [
-            { extend: 'excelHtml5', text: 'Exportar a Excel', title: 'Salidas_DRTC' },
-            { extend: 'pdfHtml5', text: 'Exportar a PDF', title: 'Salidas_DRTC', orientation: 'landscape', pageSize: 'A4' },
-            { extend: 'print', text: 'Imprimir', title: 'Salidas de Productos - DRTC' }
-        ],
-        language: { url: "//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json" }
-    });
+function mostrarToast() {
+  const toast = document.getElementById("toastSalida");
+  toast.style.display = "block";
+  setTimeout(() => { toast.style.display = "none"; }, 3000);
+}
+function ocultarToast() {
+  document.getElementById("toastSalida").style.display = "none";
+}
+function mostrarToastError(msg) {
+  const toast = document.getElementById("toastError");
+  document.getElementById("errorMsg").innerText = msg;
+  toast.style.display = "block";
+  setTimeout(() => { toast.style.display = "none"; }, 3000);
+}
+function ocultarToastError() {
+  document.getElementById("toastError").style.display = "none";
+}
 
-    function aplicarFiltros() {
-        var fechaInicio = $('#filterFechaInicio').val();
-        var fechaFin = $('#filterFechaFin').val();
+document.getElementById("id_producto").addEventListener("change", function () {
+  const id = this.value;
+  if (id) {
+    fetch(`/productos/info/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("tipo").value = data.tipo;
+        document.getElementById("marca").value = data.marca;
+        document.getElementById("color").value = data.color;
+        document.getElementById("unidad").value = data.unidad;
+        document.getElementById("stock_disponible").value = data.stock ?? '0';
+      });
+  } else {
+    ["tipo", "marca", "color", "unidad", "stock_disponible"].forEach(id => document.getElementById(id).value = '');
+  }
+});
 
-        table.rows().every(function() {
-            var fecha = this.data()[3]; // Fecha en formato 'dd/mm/yyyy'
-            var partes = fecha.split('/');
-            var fechaSalida = new Date(partes[2], partes[1] - 1, partes[0]); // Año, mes, día
+document.getElementById("formSalida").addEventListener("submit", function (e) {
+  e.preventDefault();
+  const form = e.target;
+  const datos = new FormData(form);
+  const cantidad = parseInt(document.getElementById("cantidad").value);
+  const idProducto = document.getElementById("id_producto").value;
 
-            var mostrar = true;
-            if (fechaInicio) {
-                var inicio = new Date(fechaInicio);
-                if (fechaSalida < inicio) mostrar = false;
-            }
-            if (fechaFin) {
-                var fin = new Date(fechaFin);
-                if (fechaSalida > fin) mostrar = false;
-            }
+  fetch(`/productos/info/${idProducto}`)
+    .then(res => res.json())
+    .then(producto => {
+      if (producto.stock !== undefined && cantidad > producto.stock) {
+        mostrarToastError(`La cantidad (${cantidad}) excede el stock disponible (${producto.stock})`);
+        return;
+      }
 
-            if (mostrar) {
-                $(this.node()).show();
-            } else {
-                $(this.node()).hide();
-            }
-        });
-    }
-
-    $('#applyFilters').click(function() {
-        aplicarFiltros();
-    });
-
-    $('#resetFilters').click(function() {
-        $('#filterFechaInicio').val('');
-        $('#filterFechaFin').val('');
-        table.search('').columns().search('').draw();
-        table.rows().show();
+      fetch("/salidas/registrar_ajax", {
+        method: "POST",
+        body: datos
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          form.reset();
+          document.querySelector("#modalSalida .btn-close").click();
+          mostrarToast();
+          setTimeout(() => location.reload(), 800);
+        } else {
+          mostrarToastError(data.message);
+        }
+      });
     });
 });
 </script>

@@ -1,50 +1,57 @@
 {% extends 'layout.html' %}
-
 {% block content %}
 <div class="container mt-4">
-    <h2 class="text-center mb-4">Reportes - Ingresos de Productos</h2>
+    <h2 class="text-center mb-4">Ingreso de Productos</h2>
 
-    <!-- Filtros -->
-    <div class="row mb-3">
-        <div class="col-md-3">
-            <input type="date" id="filterFechaInicio" class="form-control" placeholder="Fecha Inicio">
-        </div>
-        <div class="col-md-3">
-            <input type="date" id="filterFechaFin" class="form-control" placeholder="Fecha Fin">
-        </div>
-        <div class="col-md-6 d-flex">
-            <button id="applyFilters" class="btn btn-primary w-100 me-2">Aplicar Filtros</button>
-            <button id="resetFilters" class="btn btn-secondary w-100">Restablecer Filtros</button>
-        </div>
-    </div>
     <div class="text-end mb-3">
-      <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoIngreso">
-        <i class="bi bi-plus-circle"></i> Nuevo Ingreso
-      </button>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalIngreso">Registrar Ingreso</button>
     </div>
-    
 
     <div class="table-responsive">
-        <table id="tablaIngresos" class="table table-bordered table-hover">
-            <thead class="table-dark">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-dark text-center">
                 <tr>
                     <th>ID</th>
-                    <th>Producto</th>
+                    <th>Tipo</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
                     <th>Cantidad</th>
-                    <th>Fecha de Ingreso</th>
-                    <th>Responsable</th>
-                    <th>Observaciones</th>
+                    <th>Unidad</th>
+                    <th>Precio</th>
+                    <th>Total</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for ingreso in ingresos %}
-                <tr>
+                <tr data-bs-toggle="collapse" data-bs-target="#detalle{{ ingreso.id_ingreso }}" class="accordion-toggle">
                     <td>{{ ingreso.id_ingreso }}</td>
-                    <td>{{ ingreso.producto.nombre }}</td>
-                    <td>{{ ingreso.cantidad }}</td>
-                    <td>{{ ingreso.fecha_ingreso.strftime('%d/%m/%Y') }}</td>
-                    <td>{{ ingreso.responsable or '-' }}</td>
-                    <td>{{ ingreso.observaciones or '-' }}</td>
+                    <td>{{ ingreso.tipo_producto }}</td>
+                    <td>{{ ingreso.marca }}</td>
+                    <td>{{ ingreso.modelo }}</td>
+                    <td class="text-center">{{ ingreso.cantidad }}</td>
+                    <td>{{ ingreso.unidad }}</td>
+                    <td>S/. {{ ingreso.precio }}</td>
+                    <td>S/. {{ ingreso.total }}</td>
+                    <td>{{ ingreso.fecha_ingreso.strftime('%Y-%m-%d') }}</td>
+                    <td class="text-center">
+                        <form method="POST" action="{{ url_for('ingresos.eliminar_ingreso', id_ingreso=ingreso.id_ingreso) }}" style="display:inline-block;">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar ingreso?')">Eliminar</button>
+                        </form>
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalEditarIngreso" onclick="cargarDatosEditar({{ ingreso.id_ingreso }})">Editar</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="10">
+                        <div id="detalle{{ ingreso.id_ingreso }}" class="collapse bg-light p-3">
+                            <strong>Color:</strong> {{ ingreso.color }} |
+                            <strong>Stock:</strong> {{ ingreso.stock }} |
+                            <strong>Stock Mínimo:</strong> {{ ingreso.stock_minimo }} |
+                            <strong>Responsable:</strong> {{ ingreso.responsable }} <br>
+                            <strong>Observaciones:</strong> {{ ingreso.observaciones }}
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -52,54 +59,54 @@
     </div>
 </div>
 
-
-  <!-- Modal: Nuevo Ingreso -->
-<div class="modal fade" id="modalNuevoIngreso" tabindex="-1" aria-labelledby="modalNuevoIngresoLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+<!-- MODAL DE REGISTRO + CÁLCULO AUTOMÁTICO DE TOTAL -->
+<div class="modal fade" id="modalIngreso" tabindex="-1">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalNuevoIngresoLabel">Registrar Ingreso</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body">
-        <form id="formIngreso" method="POST" action="{{ url_for('ingresos.nuevo_ingreso_ajax') }}">
+      <form id="formNuevoIngreso" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title">Registrar Ingreso</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body row g-2">
+          <input type="hidden" name="id_producto" id="id_producto">
 
+          <div class="col-md-6">
+            <label>Tipo de Producto</label>
+            <select name="tipo_producto" id="tipo_producto" class="form-select form-select-sm" required>
+              <option value="Toner">Toner</option>
+              <option value="Tinta">Tinta</option>
+            </select>
+          </div>
 
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Tipo de Producto *</label>
-              <select name="id_tipo" id="tipoSelect" class="form-select" required>
-                <option value="">Seleccione tipo</option>
-                {% for tipo in tipos_productos %}
-                  <option value="{{ tipo.id_tipo }}">{{ tipo.nombre_tipo }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Producto *</label>
-              <select name="id_producto" id="productoSelect" class="form-select" required disabled>
-                <option value="">Seleccione producto</option>
-              </select>
-            </div>
-            <div class="col-md-4 mb-3">
-              <label class="form-label">Cantidad *</label>
-              <input type="number" name="cantidad" class="form-control" min="1" required>
-            </div>
-            <div class="col-md-8 mb-3">
-              <label class="form-label">Responsable</label>
-              <input type="text" name="responsable" class="form-control" value="{{ current_user.nombre_completo }}" readonly>
-            </div>
-            <div class="col-md-12 mb-3">
-              <label class="form-label">Observaciones</label>
-              <textarea name="observaciones" class="form-control" rows="2"></textarea>
-            </div>
+          <div class="col-md-5">
+            <label>Marca</label>
+            <input name="marca" id="marca" class="form-control form-control-sm" required>
           </div>
-          <div class="d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Registrar</button>
+
+          <div class="col-md-1 d-flex align-items-end">
+            <button type="button" class="btn btn-outline-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#modalBuscarProducto">
+              <i class="bi bi-search"></i>
+            </button>
           </div>
-        </form>
-      </div>
+
+          <div class="col-md-6"><label>Modelo</label><input name="modelo" id="modelo" class="form-control form-control-sm" required></div>
+          <div class="col-md-6"><label>Color</label><input name="color" id="color" class="form-control form-control-sm"></div>
+          <div class="col-md-6"><label>Cantidad</label><input name="cantidad" id="cantidad" type="number" class="form-control form-control-sm" required></div>
+          <div class="col-md-6"><label>Unidad</label><input name="unidad" id="unidad" class="form-control form-control-sm" required></div>
+          <div class="col-md-6"><label>Precio</label><input name="precio" id="precio" type="number" step="0.01" class="form-control form-control-sm" required></div>
+          <div class="col-md-6"><label>Total (S/)</label><input name="total" id="total" type="text" class="form-control form-control-sm" readonly></div>
+          <div class="col-md-6"><label>Fecha de Ingreso</label><input name="fecha_ingreso" id="fecha_ingreso" type="date" class="form-control form-control-sm" required></div>
+          <div class="col-md-6"><label>Stock</label><input name="stock" id="stock" type="number" class="form-control form-control-sm" required></div>
+          <div class="col-md-6"><label>Stock Mínimo</label><input name="stock_minimo" id="stock_minimo" type="number" class="form-control form-control-sm" required></div>
+          <div class="col-md-12"><label>Responsable</label><input name="responsable" id="responsable" class="form-control form-control-sm" required></div>
+          <div class="col-md-12"><label>Observaciones</label><textarea name="observaciones" id="observaciones" class="form-control form-control-sm" rows="2"></textarea></div>
+        </div>
+        <div class="modal-footer justify-content-end">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success btn-sm ms-2">Registrar</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -107,144 +114,239 @@
 
 
 
-  
+<!-- Modal único de Edición -->
+<div class="modal fade" id="modalEditarIngreso" tabindex="-1">
+  <div class="modal-dialog modal-lg" style="max-width: 720px;">
+    <div class="modal-content">
+      <form id="formEditarIngreso" method="POST">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Ingreso</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body row g-2">
+          <div class="col-md-6"><label>Tipo de Producto</label><select name="tipo_producto" class="form-select form-select-sm" required><option value="Toner">Toner</option><option value="Tinta">Tinta</option></select></div>
+          <div class="col-md-6"><label>Marca</label><input name="marca" class="form-control form-control-sm" required></div>
+          <div class="col-md-6"><label>Modelo</label><input name="modelo" class="form-control form-control-sm" required></div>
+          <div class="col-md-6"><label>Color</label><input name="color" class="form-control form-control-sm"></div>
+          <div class="col-md-6"><label>Cantidad</label><input name="cantidad" type="number" class="form-control form-control-sm" required></div>
+          <div class="col-md-6"><label>Unidad</label><input name="unidad" class="form-control form-control-sm" required></div>
+          <div class="col-md-6"><label>Precio</label><input name="precio" type="number" step="0.01" class="form-control form-control-sm" required></div>
+          <div class="col-md-6"><label>Total (S/)</label><input name="total" type="text" class="form-control form-control-sm" readonly></div>
+          <div class="col-md-6"><label>Fecha</label><input name="fecha_ingreso" type="date" class="form-control form-control-sm" required></div>
+          <div class="col-md-6"><label>Stock</label><input name="stock" type="number" class="form-control form-control-sm" required></div>
+          <div class="col-md-6"><label>Stock Mínimo</label><input name="stock_minimo" type="number" class="form-control form-control-sm" required></div>
+          <div class="col-md-12"><label>Responsable</label><input name="responsable" class="form-control form-control-sm" required></div>
+          <div class="col-md-12"><label>Observaciones</label><textarea name="observaciones" class="form-control form-control-sm" rows="2"></textarea></div>
+        </div>
+        <div class="modal-footer justify-content-end">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-sm ms-2">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
-<!-- DataTables Buttons -->
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+
+
+<!-- MODAL DE BÚSQUEDA DE PRODUCTO -->
+<div class="modal fade" id="modalBuscarProducto" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Buscar Producto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="buscarInput" class="form-control mb-3" placeholder="Buscar por marca, modelo o color">
+        <table class="table table-bordered table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>Marca</th>
+              <th>Modelo</th>
+              <th>Color</th>
+              <th>Tipo</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tablaProductos"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-$(document).ready(function() {
-    var table = $('#tablaIngresos').DataTable({
-        dom: 'Bfrtip',
-        buttons: [
-            { extend: 'excelHtml5', text: 'Exportar a Excel', title: 'Ingresos_DRTC' },
-            { extend: 'pdfHtml5', text: 'Exportar a PDF', title: 'Ingresos_DRTC', orientation: 'landscape', pageSize: 'A4' },
-            { extend: 'print', text: 'Imprimir', title: 'Ingresos de Productos - DRTC' }
-        ],
-        language: { url: "//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json" }
+function cargarProductosExistentes() {
+  fetch('/productos/lista')
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.getElementById('tablaProductos');
+      tbody.innerHTML = '';
+      data.forEach(p => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${p.marca}</td>
+          <td>${p.modelo}</td>
+          <td>${p.color}</td>
+          <td>${p.tipo}</td>
+          <td><button class="btn btn-sm btn-success" onclick='seleccionarProducto(${JSON.stringify(p)})'>Seleccionar</button></td>
+        `;
+        tbody.appendChild(row);
+      });
     });
+}
 
-    function aplicarFiltros() {
-        var fechaInicio = $('#filterFechaInicio').val();
-        var fechaFin = $('#filterFechaFin').val();
+function seleccionarProducto(p) {
+  document.getElementById('id_producto').value = p.id;
+  document.getElementById('marca').value = p.marca;
+  document.getElementById('modelo').value = p.modelo;
+  document.getElementById('color').value = p.color;
+  document.getElementById('unidad').value = p.unidad;
+  document.getElementById('tipo_producto').value = p.tipo;
+  document.getElementById('modalBuscarProducto').querySelector('.btn-close').click();
+}
 
-        table.rows().every(function() {
-            var fecha = this.data()[3]; // Fecha en formato 'dd/mm/yyyy'
-            var partes = fecha.split('/');
-            var fechaIngreso = new Date(partes[2], partes[1] - 1, partes[0]); // Año, mes, día
+const modalBuscar = document.getElementById('modalBuscarProducto');
+modalBuscar.addEventListener('show.bs.modal', cargarProductosExistentes);
+</script>
 
-            var mostrar = true;
-            if (fechaInicio) {
-                var inicio = new Date(fechaInicio);
-                if (fechaIngreso < inicio) mostrar = false;
-            }
-            if (fechaFin) {
-                var fin = new Date(fechaFin);
-                if (fechaIngreso > fin) mostrar = false;
-            }
 
-            if (mostrar) {
-                $(this.node()).show();
-            } else {
-                $(this.node()).hide();
-            }
-        });
+
+<script>
+document.getElementById('formNuevoIngreso').addEventListener('submit', function (e) {
+  e.preventDefault(); // Evita recarga
+  const form = e.target;
+  const formData = new FormData(form);
+
+  fetch('/ingresos/registrar_ajax', {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      mostrarToast("✅ " + data.message);
+      form.reset();
+      document.getElementById('modalIngreso').querySelector('.btn-close').click();
+      setTimeout(() => window.location.reload(), 1000); // recarga para ver el nuevo ingreso
+    } else {
+      mostrarToast("❌ Error: " + data.message);
     }
-
-    $('#applyFilters').click(function() {
-        aplicarFiltros();
-    });
-
-    $('#resetFilters').click(function() {
-        $('#filterFechaInicio').val('');
-        $('#filterFechaFin').val('');
-        table.search('').columns().search('').draw();
-        table.rows().show();
-    });
+  })
+  .catch(error => {
+    mostrarToast("❌ Error inesperado");
+    console.error(error);
+  });
 });
 
-document.addEventListener("DOMContentLoaded", function () {
-    const tipoSelect = document.getElementById("tipoSelect");
-    const productoSelect = document.getElementById("productoSelect");
-
-    tipoSelect.addEventListener("change", function () {
-      const tipoId = this.value;
-
-      productoSelect.innerHTML = '<option value="">Cargando productos...</option>';
-      productoSelect.disabled = true;
-
-      fetch(`/api/productos_por_tipo/${tipoId}`)
-        .then(response => response.json())
-        .then(data => {
-          productoSelect.innerHTML = '<option value="">Seleccione producto</option>';
-          data.forEach(producto => {
-            const option = document.createElement("option");
-            option.value = producto.id_producto;
-            option.textContent = producto.nombre;
-            productoSelect.appendChild(option);
-          });
-          productoSelect.disabled = false;
-        })
-        .catch(error => {
-          productoSelect.innerHTML = '<option value="">Error al cargar</option>';
-          console.error('Error al cargar productos:', error);
-        });
-    });
-  });
-  
+function mostrarToast(mensaje) {
+  const container = document.createElement('div');
+  container.className = 'toast align-items-center text-white bg-success border-0 show position-fixed top-0 end-0 m-3';
+  container.setAttribute('role', 'alert');
+  container.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body">${mensaje}</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
+    </div>
+  `;
+  document.body.appendChild(container);
+  setTimeout(() => container.remove(), 4000);
+}
 </script>
 
 <script>
-  document.getElementById("formIngreso").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const form = e.target;
-      const formData = new FormData(form);
-  
-      fetch(form.action, {
-          method: "POST",
-          body: formData
-      })
-      .then(resp => resp.json())
-      .then(data => {
-          if (data.status === "success") {
-              const nuevo = data.nuevo;
-              const tabla = document.querySelector("#tablaIngresos tbody");
-  
-              const fila = tabla.insertRow(0); // insertamos al inicio
-              fila.innerHTML = `
-                  <td>${nuevo.id_ingreso}</td>
-                  <td>${nuevo.producto}</td>
-                  <td>${nuevo.cantidad}</td>
-                  <td>${nuevo.fecha_ingreso}</td>
-                  <td>${nuevo.responsable}</td>
-                  <td>${nuevo.observaciones}</td>
-              `;
-  
-              // resetear el formulario y cerrar el modal
-              form.reset();
-              document.getElementById("productoSelect").innerHTML = '<option value="">Seleccione producto</option>';
-              document.getElementById("productoSelect").disabled = true;
-              const modal = bootstrap.Modal.getInstance(document.getElementById("modalNuevoIngreso"));
-              modal.hide();
-  
-              // opcional: alerta visual
-              alert(data.mensaje);
-          } else {
-              alert(data.mensaje);
-          }
-      })
-      .catch(err => {
-          console.error("Error al enviar ingreso:", err);
-          alert("Error inesperado al registrar ingreso.");
-      });
-  });
-  </script>
-  
+function cargarDatosEditar(id) {
+  fetch(`/ingresos/obtener/${id}`)
+    .then(response => response.json())
+    .then(data => {
+      const form = document.getElementById('formEditarIngreso');
+      form.action = `/ingresos/editar/${id}`;
+      form.tipo_producto.value = data.tipo_producto;
+      form.marca.value = data.marca;
+      form.modelo.value = data.modelo;
+      form.color.value = data.color;
+      form.cantidad.value = data.cantidad;
+      form.unidad.value = data.unidad;
+      form.precio.value = data.precio;
+      form.total.value = (parseFloat(data.precio) * parseFloat(data.cantidad)).toFixed(2);
+      form.fecha_ingreso.value = data.fecha_ingreso;
+      form.stock.value = data.stock;
+      form.stock_minimo.value = data.stock_minimo;
+      form.responsable.value = data.responsable;
+      form.observaciones.value = data.observaciones;
+    })
+    .catch(error => {
+      console.error('Error al cargar datos del ingreso:', error);
+      alert('Error al cargar los datos para edición.');
+    });
+}
+</script>
+
+
+<script>
+function actualizarTotal() {
+  const cantidad = parseFloat(document.getElementById('cantidad').value) || 0;
+  const precio = parseFloat(document.getElementById('precio').value) || 0;
+  document.getElementById('total').value = (cantidad * precio).toFixed(2);
+}
+
+document.getElementById('cantidad').addEventListener('input', actualizarTotal);
+document.getElementById('precio').addEventListener('input', actualizarTotal);
+</script>
+
+<script>
+function cargarDatosEditar(id) {
+  fetch(`/ingresos/obtener/${id}`)
+    .then(response => {
+      if (!response.ok) throw new Error('No se pudo obtener el ingreso');
+      return response.json();
+    })
+    .then(data => {
+      const form = document.getElementById('formEditarIngreso');
+      form.action = `/ingresos/editar/${id}`;
+      form.tipo_producto.value = data.tipo_producto;
+      form.marca.value = data.marca;
+      form.modelo.value = data.modelo;
+      form.color.value = data.color;
+      form.cantidad.value = data.cantidad;
+      form.unidad.value = data.unidad;
+      form.precio.value = data.precio;
+      form.total.value = (parseFloat(data.precio) * parseFloat(data.cantidad)).toFixed(2);
+      form.fecha_ingreso.value = data.fecha_ingreso;
+      form.stock.value = data.stock;
+      form.stock_minimo.value = data.stock_minimo;
+      form.responsable.value = data.responsable;
+      form.observaciones.value = data.observaciones;
+
+      const modal = new bootstrap.Modal(document.getElementById('modalEditarIngreso'));
+      modal.show();
+    })
+    .catch(error => {
+      console.error('Error al cargar datos del ingreso:', error);
+      alert('Error al cargar los datos para edición.');
+    });
+}
+
+// Activar cálculo total en modal de edición
+document.getElementById('modalEditarIngreso').addEventListener('shown.bs.modal', () => {
+  const form = document.getElementById('formEditarIngreso');
+  const cantidad = form.querySelector('input[name="cantidad"]');
+  const precio = form.querySelector('input[name="precio"]');
+  const total = form.querySelector('input[name="total"]');
+
+  function actualizarTotal() {
+    const cant = parseFloat(cantidad.value) || 0;
+    const pre = parseFloat(precio.value) || 0;
+    total.value = (cant * pre).toFixed(2);
+  }
+
+  cantidad.addEventListener('input', actualizarTotal);
+  precio.addEventListener('input', actualizarTotal);
+});
+</script>
+
+
+
 {% endblock %}

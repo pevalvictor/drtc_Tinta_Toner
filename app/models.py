@@ -4,8 +4,6 @@ from datetime import datetime
 
 from . import db
 
-from flask_login import UserMixin
-
 class Usuario(UserMixin, db.Model):
     __tablename__ = 'usuarios'
     id_usuario = db.Column(db.Integer, primary_key=True)
@@ -15,7 +13,7 @@ class Usuario(UserMixin, db.Model):
     nombre_completo = db.Column(db.String(100), nullable=False)
 
     def get_id(self):
-        return str(self.id_usuario) 
+        return str(self.id_usuario)
 
 
 class Producto(db.Model):
@@ -31,18 +29,38 @@ class Producto(db.Model):
     unidad = db.Column(db.String(20))
     activo = db.Column(db.Boolean, default=True)
 
+
+class TipoProducto(db.Model):
+    __tablename__ = 'tipos_productos'
+    id_tipo = db.Column(db.Integer, primary_key=True)
+    nombre_tipo = db.Column(db.String(50), unique=True, nullable=False)
+
+    productos = db.relationship('Producto', backref='tipo_producto', lazy=True)
+
+
 class Ingreso(db.Model):
     __tablename__ = 'ingresos'
     id_ingreso = db.Column(db.Integer, primary_key=True)
-    id_tipo = db.Column(db.Integer, db.ForeignKey('tipos_productos.id_tipo'), nullable=False)
-    id_producto = db.Column(db.Integer, db.ForeignKey('productos.id_producto'), nullable=True)  
+
+    id_producto = db.Column(db.Integer, db.ForeignKey('productos.id_producto'), nullable=True)
+    producto = db.relationship('Producto', backref='ingresos')
+
+    tipo_producto = db.Column(db.String(50), nullable=False)  # Guardado como texto
+
+    marca = db.Column(db.String(50))
+    modelo = db.Column(db.String(100))
+    color = db.Column(db.String(30))
     cantidad = db.Column(db.Integer, nullable=False)
+    unidad = db.Column(db.String(20))
+    precio = db.Column(db.Float, nullable=False, default=0)
+    total = db.Column(db.Float, nullable=False, default=0)
+    stock = db.Column(db.Integer, nullable=False, default=0)
+    stock_minimo = db.Column(db.Integer, nullable=False, default=0)
     fecha_ingreso = db.Column(db.Date, default=datetime.utcnow)
     responsable = db.Column(db.String(100))
     observaciones = db.Column(db.Text)
+    fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
 
-    producto = db.relationship('Producto', backref='ingresos')
-    tipo_producto = db.relationship('TipoProducto', backref='ingresos')
     id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id_usuario'), nullable=False)
     usuario = db.relationship('Usuario', backref='ingresos')
 
@@ -61,19 +79,7 @@ class Salida(db.Model):
     id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id_usuario'), nullable=False)
     usuario = db.relationship('Usuario', backref='salidas')
 
-class Log(db.Model):
-    __tablename__ = 'logs'
-    id_log = db.Column(db.Integer, primary_key=True)
-    id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id_usuario'), nullable=False)
-    accion = db.Column(db.String(50), nullable=False)
 
-class TipoProducto(db.Model):
-    __tablename__ = 'tipos_productos'
-    id_tipo = db.Column(db.Integer, primary_key=True)
-    nombre_tipo = db.Column(db.String(50), unique=True, nullable=False)
-
-    productos = db.relationship('Producto', backref='tipo_producto', lazy=True)
-   
 class DetalleSalida(db.Model):
     __tablename__ = 'detalles_salida'
     id_detalle = db.Column(db.Integer, primary_key=True)
@@ -83,3 +89,10 @@ class DetalleSalida(db.Model):
 
     salida = db.relationship('Salida', backref='detalles')
     producto = db.relationship('Producto', backref='detalles_salida')
+
+
+class Log(db.Model):
+    __tablename__ = 'logs'
+    id_log = db.Column(db.Integer, primary_key=True)
+    id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id_usuario'), nullable=False)
+    accion = db.Column(db.String(50), nullable=False)

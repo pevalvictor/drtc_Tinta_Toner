@@ -6,14 +6,12 @@ from datetime import datetime
 
 productos_bp = Blueprint('productos', __name__, url_prefix='/productos')
 
-
 @productos_bp.route('/dashboard')
 @login_required
 def dashboard():
     productos = Producto.query.all()
     tipos_productos = TipoProducto.query.all()
     return render_template('productos.html', productos=productos, tipos_productos=tipos_productos, current_year=datetime.now().year)
-
 
 @productos_bp.route('/nuevo', methods=['GET', 'POST'])
 @login_required
@@ -51,7 +49,6 @@ def nuevo_producto():
     tipos_productos = TipoProducto.query.all()
     return render_template('nuevo_producto.html', tipos_productos=tipos_productos)
 
-
 @productos_bp.route('/editar/<int:id_producto>', methods=['GET', 'POST'])
 @login_required
 def editar_producto(id_producto):
@@ -60,12 +57,12 @@ def editar_producto(id_producto):
     if request.method == 'POST':
         try:
             producto.nombre = request.form['nombre']
-            producto.id_tipo = request.form['id_tipo']
+            producto.id_tipo = int(request.form['id_tipo'])
             producto.marca = request.form.get('marca')
             producto.modelo_impresora = request.form.get('modelo_impresora')
             producto.color = request.form.get('color')
-            producto.stock = request.form.get('stock')
-            producto.stock_minimo = request.form.get('stock_minimo')
+            producto.stock = int(request.form.get('stock'))
+            producto.stock_minimo = int(request.form.get('stock_minimo'))
             producto.unidad = request.form.get('unidad')
             producto.activo = 'activo' in request.form
 
@@ -78,7 +75,6 @@ def editar_producto(id_producto):
     tipos_productos = TipoProducto.query.all()
     return render_template('editar_producto.html', producto=producto, tipos_productos=tipos_productos)
 
-
 @productos_bp.route('/eliminar/<int:id_producto>', methods=['POST'])
 @login_required
 def eliminar_producto(id_producto):
@@ -87,7 +83,6 @@ def eliminar_producto(id_producto):
     db.session.commit()
     flash('Producto eliminado correctamente.', 'success')
     return redirect(url_for('productos.dashboard'))
-
 
 @productos_bp.route('/api/productos_por_tipo/<int:id_tipo>', methods=['GET'])
 def productos_por_tipo(id_tipo):
@@ -99,3 +94,28 @@ def productos_por_tipo(id_tipo):
         } for p in productos
     ]
     return jsonify(resultado)
+
+@productos_bp.route('/info/<int:id_producto>')
+@login_required
+def info_producto(id_producto):
+    producto = Producto.query.get_or_404(id_producto)
+    return jsonify({
+        'tipo': producto.tipo_producto.nombre_tipo,  
+        'marca': producto.marca,
+        'color': producto.color,
+        'unidad': producto.unidad
+    })
+
+@productos_bp.route('/lista')
+@login_required
+def productos_lista():
+    productos = Producto.query.join(TipoProducto).with_entities(
+        Producto.id_producto.label('id'),
+        Producto.marca,
+        Producto.modelo_impresora.label('modelo'),
+        Producto.color,
+        Producto.unidad,
+        TipoProducto.nombre_tipo.label('tipo')
+    ).all()
+
+    return jsonify([p._asdict() for p in productos])

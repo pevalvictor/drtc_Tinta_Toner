@@ -1,19 +1,21 @@
 {% extends 'layout.html' %}
-
 {% block content %}
 <div class="container mt-4">
-    <h3 class="text-center">Historial de Salidas de Productos</h3>
+    <h2 class="text-center mb-4">SALIDA DE PRODUCTOS</h2>
+
     <div class="text-end mb-3">
-        <a href="{{ url_for('salidas.nueva_salida') }}" class="btn btn-success">Nueva Salida</a>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalSalida">Registrar Salida</button>
     </div>
+
     <div class="table-responsive">
-        <table id="salidasTable" class="table table-bordered table-hover">
+        <table class="table table-bordered table-hover text-center" id="tablaSalidas">
             <thead class="table-dark">
                 <tr>
-                    <th>#</th>
+                    <th>ID</th>
                     <th>Producto</th>
                     <th>Cantidad</th>
                     <th>Fecha de Salida</th>
+                    <th>Destino</th>
                     <th>Responsable</th>
                     <th>Observaciones</th>
                 </tr>
@@ -21,12 +23,13 @@
             <tbody>
                 {% for salida in salidas %}
                 <tr>
-                    <td>{{ loop.index }}</td>
+                    <td>{{ salida.id_salida }}</td>
                     <td>{{ salida.producto.nombre }}</td>
                     <td>{{ salida.cantidad }}</td>
-                    <td>{{ salida.fecha_salida.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ salida.fecha_salida.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ salida.destino }}</td>
                     <td>{{ salida.responsable }}</td>
-                    <td>{{ salida.observaciones or '-' }}</td>
+                    <td>{{ salida.observaciones }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -34,69 +37,95 @@
     </div>
 </div>
 
-<!-- Estilos y scripts de DataTables -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<!-- Modal de registro de salida -->
+<div class="modal fade" id="modalSalida" tabindex="-1">
+  <div class="modal-dialog">
+    <form id="formSalida" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Registrar Salida</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body row g-2">
+        <div class="col-md-12">
+          <label>Producto</label>
+          <select name="id_producto" id="selectProducto" class="form-select form-select-sm" required>
+            <option value="">Seleccionar...</option>
+            {% for producto in productos %}
+              <option value="{{ producto.id_producto }}">{{ producto.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6"><label>Tipo</label><input type="text" id="tipo" class="form-control form-control-sm" readonly></div>
+        <div class="col-md-6"><label>Marca</label><input type="text" id="marca" class="form-control form-control-sm" readonly></div>
+        <div class="col-md-6"><label>Color</label><input type="text" id="color" class="form-control form-control-sm" readonly></div>
+        <div class="col-md-6"><label>Unidad</label><input type="text" id="unidad" class="form-control form-control-sm" readonly></div>
+        <div class="col-md-6"><label>Cantidad</label><input type="number" name="cantidad" class="form-control form-control-sm" required></div>
+        <div class="col-md-6"><label>Fecha</label><input type="date" name="fecha_salida" class="form-control form-control-sm" value="{{ current_date }}" required></div>
+        <div class="col-md-12"><label>Destino</label><input name="destino" class="form-control form-control-sm" required></div>
+        <div class="col-md-12"><label>Responsable</label><input name="responsable" class="form-control form-control-sm" required></div>
+        <div class="col-md-12"><label>Observaciones</label><textarea name="observaciones" class="form-control form-control-sm" rows="2"></textarea></div>
+      </div>
+      <div class="modal-footer justify-content-end">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm">Registrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toastSalida" class="position-fixed top-0 end-0 p-3" style="z-index: 1055; display: none;">
+  <div class="toast align-items-center text-white bg-success border-0 show" role="alert">
+    <div class="d-flex">
+      <div class="toast-body">Salida registrada</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="ocultarToast()"></button>
+    </div>
+  </div>
+</div>
 
 <script>
-$(document).ready(function() {
-    $('#salidasTable').DataTable({
-        dom: 'Bfrtip',
-        buttons: [
-            {
-                extend: 'excelHtml5',
-                title: 'Salidas DRTC',
-                text: 'Exportar Excel',
-                className: 'btn btn-outline-success'
-            },
-            {
-                extend: 'pdfHtml5',
-                title: 'Salidas DRTC',
-                text: 'Exportar PDF',
-                className: 'btn btn-outline-danger',
-                orientation: 'landscape',
-                pageSize: 'A4',
-                customize: function(doc) {
-                    doc.styles.tableHeader.alignment = 'center';
-                    doc.content.splice(0, 0, {
-                        text: 'Fecha de generación: ' + new Date().toLocaleString(),
-                        alignment: 'right',
-                        margin: [0, 0, 0, 12],
-                        fontSize: 8
-                    });
-                }
-            },
-            {
-                text: 'Imprimir',
-                className: 'btn btn-outline-primary',
-                action: function () {
-                    var win = window.open('', '_blank');
-                    win.document.write('<html><head><title>Imprimir Salidas</title>');
-                    win.document.write('<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">');
-                    win.document.write('</head><body >');
-                    win.document.write('<h3 style="text-align:center;">Inventario DRTC - Salidas</h3>');
-                    win.document.write('<p style="text-align:right;">Fecha de generación: ' + new Date().toLocaleString() + '</p>');
-                    win.document.write($('#salidasTable')[0].outerHTML);
-                    win.document.write('</body></html>');
-                    win.document.close();
-                    setTimeout(function(){
-                        win.print();
-                        win.close();
-                    }, 1000);
-                }
-            }
-        ],
-        language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
-        }
+function mostrarToast() {
+  const toast = document.getElementById("toastSalida");
+  toast.style.display = "block";
+  setTimeout(() => { toast.style.display = "none"; }, 3000);
+}
+function ocultarToast() {
+  document.getElementById("toastSalida").style.display = "none";
+}
+
+document.getElementById("formSalida").addEventListener("submit", function (e) {
+  e.preventDefault();
+  const form = e.target;
+  const datos = new FormData(form);
+
+  fetch("/salidas/registrar_ajax", {
+    method: "POST",
+    body: datos
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      form.reset();
+      document.querySelector("#modalSalida .btn-close").click();
+      mostrarToast();
+      setTimeout(() => location.reload(), 800);
+    } else {
+      alert(data.message);
+    }
+  });
+});
+
+document.getElementById("selectProducto").addEventListener("change", function () {
+  const id = this.value;
+  if (!id) return;
+
+  fetch(`/productos/info/${id}`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("tipo").value = data.tipo;
+      document.getElementById("marca").value = data.marca;
+      document.getElementById("color").value = data.color;
+      document.getElementById("unidad").value = data.unidad;
     });
 });
 </script>
