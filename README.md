@@ -58,7 +58,7 @@ drtc_inventario/
 
 ## ⚙ Instalación y Configuración
 
-### 1️⃣ Clonar repositorio
+### CLONAR EL REPOSITORIO
 ```bash
 git clone https://github.com/pevalvictor/drtc_Tinta_Toner.git
 cd drtc_Tinta_Toner
@@ -84,3 +84,9 @@ flask db upgrade
 ###EJECUTAR SERVIDOR
 
 python run.py
+
+
+###IMPORTANTE#### ELIMINA la carpeta "ven" despues de haber clonado el repositorio
+luego crea el entorno virtual y instala los "requirements.txt"
+###Usuario del sistema: admin, contraseña: 123456
+### Base de datos esta dentro de la carpeta "docs"
