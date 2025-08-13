@@ -1,172 +1,192 @@
 {% extends 'layout.html' %}
 {% block content %}
+<style>
+  #tablaSalidas thead {
+    background-color: #610c0c;
+    color: #ffffff;
+  }
+  #tablaSalidas tbody tr:hover {
+    background-color: #f0f8ff;
+  }
+  #tablaSalidas th, #tablaSalidas td {
+    vertical-align: middle;
+    border: 1px solid #c2c9cf;
+    padding: 0.6rem;
+  }
+
+  div.dataTables_length label {
+    font-size: 0.9rem;
+  }
+  div.dataTables_paginate {
+    font-size: 0.9rem;
+    margin-top: 10px;
+  }
+</style>
+
+<style>
+  #tablaSalidas th, 
+  #tablaSalidas td {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.84rem;
+    line-height: 1.2;
+    vertical-align: middle;
+  }
+
+  #tablaSalidas td {
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+  }
+
+  #tablaSalidas th {
+    background-color: #000; 
+    color: #fff;
+    font-weight: 600;
+  }
+
+  #tablaSalidas .btn {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+    margin-right: 0.2rem;
+  }
+
+  #tablaSalidas .acciones {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.2rem;
+  }
+</style>
+
+
 <div class="container mt-4">
-    <h2 class="text-center mb-4">SALIDA DE PRODUCTOS</h2>
+  <h2 class="text-center mb-4">SALIDA DE PRODUCTOS</h2>
 
-    <div class="text-end mb-3">
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalSalida">Registrar Salida</button>
+  <div class="row justify-content-between align-items-center mb-3">
+    <div class="col-md-5">
+      <input type="text" id="busquedaGeneral" class="form-control form-control-sm" placeholder="Buscar por producto, destino o responsable">
     </div>
-
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover text-center" id="tablaSalidas">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Producto</th>
-                    <th>Cantidad</th>
-                    <th>Fecha de Salida</th>
-                    <th>Destino</th>
-                    <th>Responsable</th>
-                    <th>Observaciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for salida in salidas %}
-                <tr>
-                    <td>{{ salida.id_salida }}</td>
-                    <td>{{ salida.producto.nombre }}</td>
-                    <td>{{ salida.cantidad }}</td>
-                    <td>{{ salida.fecha_salida.strftime('%Y-%m-%d') }}</td>
-                    <td>{{ salida.destino }}</td>
-                    <td>{{ salida.responsable }}</td>
-                    <td>{{ salida.observaciones }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="col-md-2">
+      <input type="date" id="fechaInicio" class="form-control form-control-sm">
     </div>
-</div>
+    <div class="col-md-2">
+      <input type="date" id="fechaFin" class="form-control form-control-sm">
+    </div>
+    <div class="col-md-3 text-end">
+        <button type="button" class="btn btn-sm btn-outline-danger mb-1" onclick="exportar('pdf')">
+            <i class="bi bi-file-earmark-pdf"></i>
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-success mb-1" onclick="exportar('excel')">
+            <i class="bi bi-file-earmark-excel"></i>
+        </button>
 
-<!-- Modal de registro de salida -->
-<div class="modal fade" id="modalSalida" tabindex="-1">
-  <div class="modal-dialog">
-    <form id="formSalida" class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Registrar Salida</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body row g-2">
-        <div class="col-md-12">
-          <label>Producto</label>
-          <select name="id_producto" class="form-select form-select-sm" id="id_producto" required>
-            <option value="">Seleccionar...</option>
-            {% for producto in productos %}
-              <option value="{{ producto.id_producto }}">{{ producto.nombre }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="col-md-6"><label>Tipo</label><input name="tipo" id="tipo" class="form-control form-control-sm" readonly></div>
-        <div class="col-md-6"><label>Marca</label><input name="marca" id="marca" class="form-control form-control-sm" readonly></div>
-        <div class="col-md-6"><label>Color</label><input name="color" id="color" class="form-control form-control-sm" readonly></div>
-        <div class="col-md-6"><label>Unidad</label><input name="unidad" id="unidad" class="form-control form-control-sm" readonly></div>
-        <div class="col-md-6"><label>Stock Disponible</label><input id="stock_disponible" class="form-control form-control-sm bg-light" readonly></div>
-        <div class="col-md-6">
-          <label>Cantidad</label>
-          <input type="number" name="cantidad" id="cantidad" class="form-control form-control-sm" required>
-        </div>
-        <div class="col-md-6">
-          <label>Fecha</label>
-          <input type="date" name="fecha_salida" class="form-control form-control-sm" value="{{ current_date }}" required>
-        </div>
-        <div class="col-md-12"><label>Destino</label><input name="destino" class="form-control form-control-sm" required></div>
-        <div class="col-md-12"><label>Responsable</label><input name="responsable" class="form-control form-control-sm" required></div>
-        <div class="col-md-12"><label>Observaciones</label><textarea name="observaciones" class="form-control form-control-sm" rows="2"></textarea></div>
-      </div>
-      <div class="modal-footer justify-content-end">
-        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-primary btn-sm">Registrar</button>
-      </div>
-    </form>
+
+      <button class="btn btn-success btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#modalSalida">Registrar Salida</button>
+    </div>
+  </div>
+
+  <div class="table-responsive" style="overflow-x: auto;">
+    <table class="table table-bordered table-hover text-center align-middle" id="tablaSalidas">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Fecha de Salida</th>
+          <th>Destino</th>
+          <th>Responsable</th>
+          <th>Observaciones</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for salida in salidas %}
+        <tr>
+          <td>{{ salida.id_salida }}</td>
+          <td>{{ salida.producto.nombre }}</td>
+          <td>{{ salida.cantidad }}</td>
+          <td>{{ salida.fecha_salida.strftime('%Y-%m-%d') }}</td>
+          <td>{{ salida.destino }}</td>
+          <td>{{ salida.responsable }}</td>
+          <td>{{ salida.observaciones }}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary" onclick="editarSalida({{ salida.id_salida }})" title="Editar"><i class="bi bi-pencil-square"></i></button>
+            <button class="btn btn-sm btn-outline-danger" onclick="eliminarSalida({{ salida.id_salida }})" title="Eliminar"><i class="bi bi-trash"></i></button>
+            
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
 
-<!-- Toast Exitoso -->
-<div id="toastSalida" class="position-fixed top-0 end-0 p-3" style="z-index: 1055; display: none;">
-  <div class="toast align-items-center text-white bg-success border-0 show" role="alert">
+{% include 'salidas.html' %}
+
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 1055">
+  <div id="toastMensaje" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" style="display:none">
     <div class="d-flex">
-      <div class="toast-body">Salida registrada correctamente.</div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="ocultarToast()"></button>
+      <div class="toast-body">Registro eliminado</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('toastMensaje').style.display='none'"></button>
     </div>
   </div>
 </div>
+{% endblock %}
 
-<!-- Toast Error -->
-<div id="toastError" class="position-fixed top-0 end-0 p-3" style="z-index: 1056; display: none;">
-  <div class="toast align-items-center text-white bg-danger border-0 show" role="alert">
-    <div class="d-flex">
-      <div class="toast-body" id="errorMsg">Error.</div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="ocultarToastError()"></button>
-    </div>
-  </div>
-</div>
+{% block scripts %}
+<script>
+  $(document).ready(function () {
+    const tabla = $('#tablaSalidas').DataTable({
+      language: {
+        url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+      },
+      dom: 'lrtip',
+      pageLength: 10,
+      lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'Todos']]
+    });
+
+    $('#busquedaGeneral').on('keyup', function () {
+      tabla.search(this.value).draw();
+    });
+
+    $.fn.dataTable.ext.search.push(function (settings, data) {
+      const min = $('#fechaInicio').val();
+      const max = $('#fechaFin').val();
+      const fecha = data[3]; 
+
+      if (!min && !max) return true;
+      if (min && !max && fecha >= min) return true;
+      if (!min && max && fecha <= max) return true;
+      if (min && max && fecha >= min && fecha <= max) return true;
+
+      return false;
+    });
+
+    $('#fechaInicio, #fechaFin').on('change', function () {
+      tabla.draw();
+    });
+  });
+</script>
 
 <script>
-function mostrarToast() {
-  const toast = document.getElementById("toastSalida");
-  toast.style.display = "block";
-  setTimeout(() => { toast.style.display = "none"; }, 3000);
-}
-function ocultarToast() {
-  document.getElementById("toastSalida").style.display = "none";
-}
-function mostrarToastError(msg) {
-  const toast = document.getElementById("toastError");
-  document.getElementById("errorMsg").innerText = msg;
-  toast.style.display = "block";
-  setTimeout(() => { toast.style.display = "none"; }, 3000);
-}
-function ocultarToastError() {
-  document.getElementById("toastError").style.display = "none";
+function exportar(formato) {
+  const fechaInicio = document.getElementById('fechaInicio').value;
+  const fechaFin = document.getElementById('fechaFin').value;
+  let url = `/reportes/salidas/${formato}`;
+
+  const params = new URLSearchParams();
+  if (fechaInicio) params.append('fechaInicio', fechaInicio);
+  if (fechaFin) params.append('fechaFin', fechaFin);
+
+  if (params.toString()) url += '?' + params.toString();
+
+  window.open(url, '_blank');
 }
 
-document.getElementById("id_producto").addEventListener("change", function () {
-  const id = this.value;
-  if (id) {
-    fetch(`/productos/info/${id}`)
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById("tipo").value = data.tipo;
-        document.getElementById("marca").value = data.marca;
-        document.getElementById("color").value = data.color;
-        document.getElementById("unidad").value = data.unidad;
-        document.getElementById("stock_disponible").value = data.stock ?? '0';
-      });
-  } else {
-    ["tipo", "marca", "color", "unidad", "stock_disponible"].forEach(id => document.getElementById(id).value = '');
-  }
-});
-
-document.getElementById("formSalida").addEventListener("submit", function (e) {
-  e.preventDefault();
-  const form = e.target;
-  const datos = new FormData(form);
-  const cantidad = parseInt(document.getElementById("cantidad").value);
-  const idProducto = document.getElementById("id_producto").value;
-
-  fetch(`/productos/info/${idProducto}`)
-    .then(res => res.json())
-    .then(producto => {
-      if (producto.stock !== undefined && cantidad > producto.stock) {
-        mostrarToastError(`La cantidad (${cantidad}) excede el stock disponible (${producto.stock})`);
-        return;
-      }
-
-      fetch("/salidas/registrar_ajax", {
-        method: "POST",
-        body: datos
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          form.reset();
-          document.querySelector("#modalSalida .btn-close").click();
-          mostrarToast();
-          setTimeout(() => location.reload(), 800);
-        } else {
-          mostrarToastError(data.message);
-        }
-      });
-    });
-});
 </script>
+
+
 {% endblock %}
+
+
+

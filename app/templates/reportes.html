@@ -1,7 +1,173 @@
 {% extends 'layout.html' %}
-
 {% block content %}
-<div class="container mt-5">
-    <h2 class="text-center">Módulo de Reportes</h2>
+<style>
+  #tablaSalidas thead {
+    background-color: #000;
+    color: #fff;
+  }
+  #tablaSalidas tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+  #tablaSalidas th, #tablaSalidas td {
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+    padding: 0.6rem;
+  }
+</style>
+
+<div class="container mt-4">
+  <h2 class="text-center mb-4">SALIDA DE PRODUCTOS</h2>
+
+  <div class="row justify-content-between align-items-center mb-3">
+    <div class="col-md-5">
+      <input type="text" id="busquedaGeneral" class="form-control form-control-sm" placeholder="Buscar por producto, destino o responsable">
+    </div>
+    <div class="col-md-2">
+      <input type="date" id="fechaInicio" class="form-control form-control-sm">
+    </div>
+    <div class="col-md-2">
+      <input type="date" id="fechaFin" class="form-control form-control-sm">
+    </div>
+    <div class="col-md-3 text-end">
+      <button class="btn btn-sm btn-outline-danger mb-1" id="exportPDF"><i class="bi bi-file-earmark-pdf"></i></button>
+      <button class="btn btn-sm btn-outline-success mb-1" id="exportExcel"><i class="bi bi-file-earmark-excel"></i></button>
+      <button class="btn btn-success btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#modalSalida">Registrar Salida</button>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover text-center align-middle" id="tablaSalidas">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Fecha de Salida</th>
+          <th>Destino</th>
+          <th>Responsable</th>
+          <th>Observaciones</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for salida in salidas %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ salida.producto.nombre }}</td>
+          <td>{{ salida.cantidad }}</td>
+          <td>{{ salida.fecha_salida.strftime('%Y-%m-%d') }}</td>
+          <td>{{ salida.destino }}</td>
+          <td>{{ salida.responsable }}</td>
+          <td>{{ salida.observaciones }}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary" onclick="editarSalida({{ salida.id_salida }})"><i class="bi bi-pencil-square"></i></button>
+            <button class="btn btn-sm btn-outline-danger" onclick="eliminarSalida({{ salida.id_salida }})"><i class="bi bi-trash"></i></button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
+
+{% include 'salidas.html' %}
+
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 9999">
+  <div id="toastMensaje" class="toast align-items-center text-white bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true" style="display: none;">
+    <div class="d-flex">
+      <div class="toast-body">Registro eliminado</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="ocultarToast()"></button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $(document).ready(function () {
+    const tabla = $('#tablaSalidas').DataTable({
+      pageLength: 10,
+      lengthChange: true,
+      lengthMenu: [10, 25, 50],
+      ordering: true,
+      language: {
+        url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+      },
+      dom: '<"row"<"col-sm-6"l><"col-sm-6"p>>frtipB',
+      buttons: [
+        {
+          extend: 'excelHtml5',
+          text: 'Excel',
+          className: 'd-none',
+          title: 'Salidas de productos',
+          exportOptions: {
+            columns: [1, 2, 3, 4, 5, 6]
+          }
+        }
+      ]
+    });
+
+    $('#exportExcel').on('click', function () {
+      tabla.button('.buttons-excel').trigger();
+    });
+
+    $('#busquedaGeneral').on('keyup', function () {
+      tabla.search(this.value).draw();
+    });
+
+    $('#fechaInicio, #fechaFin').on('change', function () {
+      tabla.draw();
+    });
+
+    $.fn.dataTable.ext.search.push(function (settings, data) {
+      const min = $('#fechaInicio').val();
+      const max = $('#fechaFin').val();
+      const fecha = data[3];
+      return (!min && !max) || (!min && fecha <= max) || (min <= fecha && !max) || (min <= fecha && fecha <= max);
+    });
+
+    $('#exportPDF').on('click', function () {
+      const tablaClon = $('#tablaSalidas').clone();
+      tablaClon.find('thead th:first-child, thead th:last-child, tbody td:first-child, tbody td:last-child').remove();
+      const ventana = window.open('', '', 'width=1024,height=800');
+      ventana.document.write('<html><head><title>Salidas</title>');
+      ventana.document.write('<style>table{width:100%;border-collapse:collapse}td,th{border:1px solid #ccc;padding:6px;text-align:center}</style>');
+      ventana.document.write('</head><body>');
+      ventana.document.write(tablaClon.prop('outerHTML'));
+      ventana.document.write('</body></html>');
+      ventana.document.close();
+      ventana.print();
+    });
+  });
+
+  function mostrarToast(texto = "Registro eliminado") {
+    const toast = document.getElementById("toastMensaje");
+    toast.querySelector('.toast-body').textContent = texto;
+    toast.style.display = "block";
+    setTimeout(() => { toast.style.display = "none"; }, 3000);
+  }
+
+  function ocultarToast() {
+    document.getElementById("toastMensaje").style.display = "none";
+  }
+
+  function editarSalida(id) {
+    mostrarToast("Función editar no implementada aún");
+  }
+
+  function eliminarSalida(id) {
+    if (confirm("¿Estás seguro de eliminar esta salida?")) {
+      fetch(`/salidas/eliminar/${id}`, { method: "POST" })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            mostrarToast();
+            setTimeout(() => location.reload(), 1500);
+          } else {
+            alert(data.message || "Error al eliminar.");
+          }
+        });
+    }
+  }
+</script>
 {% endblock %}

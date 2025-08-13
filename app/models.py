@@ -45,7 +45,7 @@ class Ingreso(db.Model):
     id_producto = db.Column(db.Integer, db.ForeignKey('productos.id_producto'), nullable=True)
     producto = db.relationship('Producto', backref='ingresos')
 
-    tipo_producto = db.Column(db.String(50), nullable=False)  # Guardado como texto
+    tipo_producto = db.Column(db.String(50), nullable=False)  
 
     marca = db.Column(db.String(50))
     modelo = db.Column(db.String(100))

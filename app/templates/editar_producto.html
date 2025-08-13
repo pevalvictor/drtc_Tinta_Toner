@@ -83,7 +83,7 @@ document.getElementById("formEditarProducto").addEventListener("submit", functio
       alert(data.mensaje);
       const modal = bootstrap.Modal.getInstance(document.getElementById("modalEditarProducto"));
       modal.hide();
-      location.reload();  // ← puedes reemplazar por actualizar la fila sin recarga
+      location.reload();  
     } else {
       alert("❌ Error: " + data.mensaje);
     }

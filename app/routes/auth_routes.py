@@ -24,13 +24,13 @@ def login():
                 flash("Todos los campos son obligatorios")
                 return render_template('login.html')
 
-            print(f"🧑 Usuario: {username} | 🔒 Password: {password}")
+            print(f"Usuario: {username} |Password: {password}")
 
             user = Usuario.query.filter_by(usuario=username).first()
             if user and check_password_hash(user.password_hash, password):
                 login_user(user)
-                print("✅ Login exitoso")
-                return redirect(url_for('home.dashboard'))  # Asegúrate que 'productos' sea el nombre correcto del blueprint
+                print("Login exitoso")
+                return redirect(url_for('home.dashboard'))  
             else:
                 print("Credenciales incorrectas")
                 flash('Credenciales incorrectas')
@@ -38,7 +38,7 @@ def login():
         return render_template('login.html')
 
     except Exception as e:
-        print("🚨 ERROR EN LOGIN:", repr(e))
+        print("ERROR EN LOGIN:", repr(e))
         traceback.print_exc()
         raise e
 

@@ -4,6 +4,13 @@ from app.models import Ingreso, Producto, TipoProducto
 from app import db
 from datetime import datetime
 
+from io import BytesIO
+import pandas as pd
+from flask import send_file
+from xhtml2pdf import pisa
+from flask import make_response
+
+
 ingresos_bp = Blueprint('ingresos', __name__, url_prefix='/ingresos')
 
 
@@ -67,23 +74,33 @@ def editar_ingreso(id_ingreso):
         ingreso.stock_minimo = get_safe_int(data.get('stock_minimo'))
         ingreso.responsable = data.get('responsable')
         ingreso.observaciones = data.get('observaciones')
+
         db.session.commit()
-        flash('Modificación exitosa', 'success')
-        return redirect(url_for('ingresos.dashboard'))
+
+        return jsonify(success=True, message="Ingreso actualizado correctamente")
+    
     except Exception as e:
         db.session.rollback()
-        flash(f'Error al actualizar ingreso: {str(e)}', 'danger')
-        return redirect(url_for('ingresos.dashboard'))
+        return jsonify(success=False, message=f"Error al actualizar ingreso: {str(e)}")
 
 
 @ingresos_bp.route('/eliminar/<int:id_ingreso>', methods=['POST'])
 @login_required
 def eliminar_ingreso(id_ingreso):
     ingreso = Ingreso.query.get_or_404(id_ingreso)
-    db.session.delete(ingreso)
-    db.session.commit()
-    flash('Ingreso eliminado correctamente.', 'success')
+    try:
+        db.session.delete(ingreso)
+        db.session.commit()
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify(success=True, message="Ingreso eliminado correctamente")
+        flash("Ingreso eliminado correctamente", "success")
+    except Exception as e:
+        db.session.rollback()
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify(success=False, message="Error al eliminar")
+        flash("Error al eliminar ingreso", "danger")
     return redirect(url_for('ingresos.dashboard'))
+
 
 
 @ingresos_bp.route('/registrar_ajax', methods=['POST'])
@@ -102,14 +119,13 @@ def nuevo_ingreso_ajax():
         stock = get_safe_int(data.get('stock'))
         stock_minimo = get_safe_int(data.get('stock_minimo'))
 
-        # Verifica si el tipo ya existe o crearlo
         tipo = TipoProducto.query.filter_by(nombre_tipo=tipo_nombre).first()
         if not tipo:
             tipo = TipoProducto(nombre_tipo=tipo_nombre)
             db.session.add(tipo)
             db.session.commit()
 
-        # Busca si el producto ya existe por marca, modelo y color
+   
         producto = Producto.query.filter_by(marca=marca, modelo_impresora=modelo, color=color).first()
 
         if producto:
@@ -157,3 +173,131 @@ def nuevo_ingreso_ajax():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+    
+@ingresos_bp.route('/reporte/pdf')
+@login_required
+def exportar_ingresos_pdf():
+    from fpdf import FPDF
+    ingresos = Ingreso.query.order_by(Ingreso.fecha_ingreso.desc()).all()
+
+    pdf = FPDF(orientation='L', unit='mm', format='A4')
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+
+    pdf.set_font('Arial', 'B', 12)
+    titulo = f'DRTC - REPORTE DE INGRESOS | Generado: {datetime.now().strftime("%Y-%m-%d %H:%M")}'
+    pdf.cell(0, 10, titulo, ln=True, align='C')
+    pdf.ln(4)
+
+    headers = ['Fecha', 'Tipo', 'Marca', 'Modelo', 'Color', 'Cantidad', 'Unidad', 'Precio', 'Total', 'Responsable']
+    col_widths = [25, 20, 25, 25, 20, 20, 18, 20, 22, 40]
+    line_height = 5
+
+    pdf.set_fill_color(97, 12, 12)
+    pdf.set_text_color(255)
+    pdf.set_font('Arial', 'B', 9)
+    for i, header in enumerate(headers):
+        pdf.cell(col_widths[i], 8, header, border=1, align='C', fill=True)
+    pdf.ln()
+
+    pdf.set_font('Arial', '', 8)
+    pdf.set_text_color(0)
+
+    for i in ingresos:
+        row = [
+            i.fecha_ingreso.strftime('%Y-%m-%d'),
+            i.tipo_producto or '-',
+            i.marca or '-',
+            i.modelo or '-',
+            i.color or '-',
+            str(i.cantidad),
+            i.unidad or '-',
+            f"S/. {i.precio:.2f}",
+            f"S/. {i.total:.2f}",
+            i.responsable or '-'
+        ]
+
+        max_lines = 1
+        line_data = []
+        for j, text in enumerate(row):
+            lines = pdf.multi_cell(col_widths[j], line_height, text, border=0, split_only=True)
+            line_data.append(lines)
+            max_lines = max(max_lines, len(lines))
+
+        row_height = max_lines * line_height
+        x_start = pdf.get_x()
+        y_start = pdf.get_y()
+
+        for j in range(len(headers)):
+            pdf.rect(x_start + sum(col_widths[:j]), y_start, col_widths[j], row_height)
+
+        for j, lines in enumerate(line_data):
+            x = x_start + sum(col_widths[:j]) + 1
+            y = y_start
+            for line in lines:
+                pdf.set_xy(x, y)
+                pdf.cell(col_widths[j] - 2, line_height, line)
+                y += line_height
+
+        pdf.set_y(y_start + row_height)
+
+    output = BytesIO()
+    output.write(pdf.output(dest='S').encode('latin1'))
+    output.seek(0)
+    return send_file(output, as_attachment=True, download_name='reporte_ingresos.pdf', mimetype='application/pdf')
+
+
+
+@ingresos_bp.route('/reporte/excel')
+@login_required
+def exportar_ingresos_excel():
+    ingresos = Ingreso.query.order_by(Ingreso.fecha_ingreso.desc()).all()
+
+    data = []
+    for i in ingresos:
+        data.append({
+            'Fecha': i.fecha_ingreso.strftime('%Y-%m-%d'),
+            'Tipo': i.tipo_producto,
+            'Marca': i.marca,
+            'Modelo': i.modelo,
+            'Color': i.color,
+            'Cantidad': i.cantidad,
+            'Unidad': i.unidad,
+            'Precio': f"S/. {i.precio:.2f}",
+            'Total': f"S/. {i.total:.2f}",
+            'Responsable': i.responsable,
+            'Observaciones': i.observaciones or ''
+        })
+
+    df = pd.DataFrame(data)
+    output = BytesIO()
+
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, startrow=2, sheet_name='Ingresos')
+        wb = writer.book
+        ws = writer.sheets['Ingresos']
+
+        titulo = f'DRTC - REPORTE DE INGRESOS | Generado: {datetime.now().strftime("%Y-%m-%d %H:%M")}'
+        titulo_style = wb.add_format({'bold': True, 'font_size': 14, 'align': 'center', 'bg_color': '#610c0c', 'font_color': '#ffffff'})
+        ws.merge_range('A1:K1', titulo, titulo_style)
+
+    
+        header_style = wb.add_format({'bold': True, 'bg_color': '#d9d9d9', 'border': 1, 'align': 'center'})
+        for col_num, col_name in enumerate(df.columns):
+            ws.write(2, col_num, col_name, header_style)
+
+        cell_style = wb.add_format({'text_wrap': True, 'valign': 'top', 'border': 1})
+        for row_num, row_data in enumerate(data, start=3):
+            for col_num, key in enumerate(df.columns):
+                ws.write(row_num, col_num, row_data[key], cell_style)
+
+        col_widths = [15, 15, 15, 18, 12, 10, 10, 12, 12, 25, 30]
+        for i, width in enumerate(col_widths):
+            ws.set_column(i, i, width)
+
+    output.seek(0)
+    return send_file(output,
+                     as_attachment=True,
+                     download_name='reporte_ingresos.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+

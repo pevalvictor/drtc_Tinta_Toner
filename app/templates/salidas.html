@@ -1,49 +1,10 @@
-{% extends 'layout.html' %}
-{% block content %}
-<div class="container mt-4">
-    <h2 class="text-center mb-4">SALIDA DE PRODUCTOS</h2>
-
-    <div class="text-end mb-3">
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalSalida">Registrar Salida</button>
-    </div>
-
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover text-center" id="tablaSalidas">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Producto</th>
-                    <th>Cantidad</th>
-                    <th>Fecha de Salida</th>
-                    <th>Destino</th>
-                    <th>Responsable</th>
-                    <th>Observaciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for salida in salidas %}
-                <tr>
-                    <td>{{ salida.id_salida }}</td>
-                    <td>{{ salida.producto.nombre }}</td>
-                    <td>{{ salida.cantidad }}</td>
-                    <td>{{ salida.fecha_salida.strftime('%Y-%m-%d') }}</td>
-                    <td>{{ salida.destino }}</td>
-                    <td>{{ salida.responsable }}</td>
-                    <td>{{ salida.observaciones }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
 <!-- Modal de registro de salida -->
-<div class="modal fade" id="modalSalida" tabindex="-1">
+<div class="modal fade" id="modalSalida" tabindex="-1" aria-labelledby="modalSalidaLabel" aria-hidden="true">
   <div class="modal-dialog">
     <form id="formSalida" class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Registrar Salida</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <h5 class="modal-title" id="modalSalidaLabel">Registrar Salida</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
       <div class="modal-body row g-2">
         <div class="col-md-12">
@@ -73,31 +34,87 @@
   </div>
 </div>
 
-<!-- Toast -->
-<div id="toastSalida" class="position-fixed top-0 end-0 p-3" style="z-index: 1055; display: none;">
-  <div class="toast align-items-center text-white bg-success border-0 show" role="alert">
-    <div class="d-flex">
-      <div class="toast-body">Salida registrada</div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="ocultarToast()"></button>
+<!-- Custom alert -->
+<div class="modal fade" id="confirmEliminarModal" tabindex="-1" aria-labelledby="confirmEliminarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="confirmEliminarLabel">Por favor confirme</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        ¿Está seguro de eliminar esta salida?
+      </div>
+      <div class="modal-footer justify-content-between">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="btnConfirmEliminar" class="btn btn-danger btn-sm">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal de Editart  Salidas -->
+<div class="modal fade" id="modalEditarSalida" tabindex="-1" aria-labelledby="modalEditarSalidaLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formEditarSalida">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="modalEditarSalidaLabel">Editar Salida</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body row g-2">
+          <input type="hidden" name="id_salida" id="edit_id_salida">
+          <div class="col-md-12">
+            <label>Producto</label>
+            <select name="id_producto" id="edit_id_producto" class="form-select form-select-sm" required>
+              {% for producto in productos %}
+              <option value="{{ producto.id_producto }}">{{ producto.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label>Cantidad</label>
+            <input type="number" name="cantidad" id="edit_cantidad" class="form-control form-control-sm" required>
+          </div>
+          <div class="col-md-6">
+            <label>Fecha</label>
+            <input type="date" name="fecha_salida" id="edit_fecha" class="form-control form-control-sm" required>
+          </div>
+          <div class="col-md-12">
+            <label>Destino</label>
+            <input name="destino" id="edit_destino" class="form-control form-control-sm">
+          </div>
+          <div class="col-md-12">
+            <label>Responsable</label>
+            <input name="responsable" id="edit_responsable" class="form-control form-control-sm">
+          </div>
+          <div class="col-md-12">
+            <label>Observaciones</label>
+            <textarea name="observaciones" id="edit_observaciones" class="form-control form-control-sm" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success btn-sm">Guardar Cambios</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
 
 <script>
-function mostrarToast() {
-  const toast = document.getElementById("toastSalida");
+function mostrarToast(mensaje) {
+  const toast = document.getElementById("toastMensaje");
+  toast.querySelector(".toast-body").textContent = mensaje;
   toast.style.display = "block";
-  setTimeout(() => { toast.style.display = "none"; }, 3000);
-}
-function ocultarToast() {
-  document.getElementById("toastSalida").style.display = "none";
+  setTimeout(() => toast.style.display = "none", 2000);
 }
 
+// Registrar salida
 document.getElementById("formSalida").addEventListener("submit", function (e) {
   e.preventDefault();
-  const form = e.target;
-  const datos = new FormData(form);
-
+  const datos = new FormData(this);
   fetch("/salidas/registrar_ajax", {
     method: "POST",
     body: datos
@@ -105,20 +122,19 @@ document.getElementById("formSalida").addEventListener("submit", function (e) {
   .then(res => res.json())
   .then(data => {
     if (data.success) {
-      form.reset();
-      document.querySelector("#modalSalida .btn-close").click();
-      mostrarToast();
-      setTimeout(() => location.reload(), 800);
+      bootstrap.Modal.getInstance(document.getElementById("modalSalida")).hide();
+      mostrarToast("Salida registrada");
+      setTimeout(() => location.reload(), 500);
     } else {
-      alert(data.message);
+      
     }
   });
 });
 
+// Cargar detalles al seleccionar producto
 document.getElementById("selectProducto").addEventListener("change", function () {
   const id = this.value;
   if (!id) return;
-
   fetch(`/productos/info/${id}`)
     .then(res => res.json())
     .then(data => {
@@ -128,5 +144,126 @@ document.getElementById("selectProducto").addEventListener("change", function ()
       document.getElementById("unidad").value = data.unidad;
     });
 });
+
+// Para abir el modal  de edición con valores precargados
+function editarSalida(id) {
+  fetch(`/salidas/${id}/json`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("edit_id_salida").value = data.id_salida;
+      document.getElementById("edit_id_producto").value = data.id_producto;
+      document.getElementById("edit_cantidad").value = data.cantidad;
+      document.getElementById("edit_fecha").value = data.fecha_salida;
+      document.getElementById("edit_destino").value = data.destino;
+      document.getElementById("edit_responsable").value = data.responsable;
+      document.getElementById("edit_observaciones").value = data.observaciones;
+      new bootstrap.Modal(document.getElementById("modalEditarSalida")).show();
+    });
+}
+
+// Guardar edición y actualizar fila
+document.getElementById("formEditarSalida").addEventListener("submit", function (e) {
+  e.preventDefault();
+  const id = document.getElementById("edit_id_salida").value;
+  const datos = new FormData(this);
+  fetch(`/salidas/${id}/editar`, {
+    method: "POST",
+    body: datos
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      bootstrap.Modal.getInstance(document.getElementById("modalEditarSalida")).hide();
+      mostrarToast("Salida actualizada");
+      setTimeout(() => location.reload(), 500);
+    } else {
+      alert("Error al actualizar: " + data.message);
+    }
+  });
+});
+
+
+function eliminarSalida(id) {
+  if (!confirm("¿Está seguro de eliminar esta salida?")) return;
+  fetch(`/salidas/eliminar/${id}`, {
+    method: "POST"
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      mostrarToast("Salida eliminada");
+      setTimeout(() => location.reload(), 500);
+    } else {
+      alert("Error al eliminar: " + data.message);
+    }
+  });
+}
+</script>
+
+<script>
+let salidaAEliminar = null;
+function eliminarSalida(id) {
+  salidaAEliminar = id;
+  new bootstrap.Modal(document.getElementById('confirmEliminarModal')).show();
+}
+
+document.getElementById('btnConfirmEliminar').addEventListener('click', function () {
+  if (!salidaAEliminar) return;
+  fetch(`/salidas/eliminar/${salidaAEliminar}`, {
+    method: 'POST'
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        mostrarToast("Salida eliminada");
+        setTimeout(() => location.reload(), 500);
+      } else {
+        alert("Error: " + data.message);
+      }
+    });
+});
+
+new bootstrap.Modal(document.getElementById('modalStockInsuficiente')).show();
+
+</script>
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    $('#formSalida').on('submit', function (e) {
+      e.preventDefault();
+
+      const form = $(this);
+      const formData = form.serialize();
+
+      fetch('/salidas/registrar_ajax', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          location.reload(); 
+        } else {
+          if (data.message.includes("Stock insuficiente")) {
+            new bootstrap.Modal(document.getElementById('modalStockInsuficiente')).show();
+          } else {
+       
+            document.getElementById('mensajeAlerta').innerText = data.message;
+            new bootstrap.Modal(document.getElementById('modalAlerta')).show();
+          }
+        }
+      })
+      .catch(err => {
+        console.error('Error al registrar salida:', err);
+        document.getElementById('mensajeAlerta').innerText = "Error de conexión con el servidor.";
+        new bootstrap.Modal(document.getElementById('modalAlerta')).show();
+      });
+    });
+  });
 </script>
 {% endblock %}
+

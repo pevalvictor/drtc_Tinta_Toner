@@ -21,8 +21,21 @@
     <!-- Bootstrap -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
+    
     <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+
+    <!-- Botones de exportación -->
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+
+
 
     <style>
         body {
@@ -63,20 +76,138 @@
         }
 
 
-          .dropdown-menu {
-    background-color: #ffffff !important; /* fondo blanco */
+    .dropdown-menu {
+    background-color: #ffffff !important; 
   }
 
     .dropdown-menu .dropdown-item {
-        color: #212529 !important; /* texto oscuro forzado */
+        color: #212529 !important; 
     }
 
     .dropdown-menu .dropdown-item:hover {
-        background-color: #9b2626 !important; /* fondo al pasar el cursor */
-        color: #eee8e8 !important; /* mantener texto oscuro en hover */
+        background-color: #9b2626 !important; 
+        color: #eee8e8 !important; 
     }
+
+
+    #tablaSalidas th {
+    background-color: #000;
+    color: white;
+    padding: 6px;
+    }
+    #tablaSalidas td {
+    padding: 4px 6px;
+    vertical-align: middle;
+    }
+    .acciones-btns {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    }
+    #tablaSalidas td, #tablaSalida th{
+        padding: 0.3rem;
+        padding-bottom: 0.3rem;
+        font-size: 0.85rem;
+    }
+   
+    #tablaSalidas th, 
+    #tablaSalidas td {
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+        font-size: 0.84rem;
+        line-height: 1.2;
+        vertical-align: middle;
+    }
+
+    #tablaSalidas td {
+        padding-left: 0.4rem;
+        padding-right: 0.4rem;
+    }
+
+    #tablaSalidas th {
+        background-color: #000; 
+        color: #fff;
+        font-weight: 600;
+    }
+
+    #tablaSalidas .btn {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.75rem;
+        margin-right: 0.2rem;
+    }
+
+    #tablaSalidas .acciones {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.2rem;
+    }
+  
+    html, body {
+    overflow-x: hidden !important;
+    }
+
+    body {
+    overflow-y: auto !important;
+    }
+
+    table {
+    width: 100% !important;
+    table-layout: auto;
+    }
+
+    /*PARA TABLA PRODUCTOS */
+    
+#tablaProductos th,
+#tablaProductos td {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  font-size: 0.84rem;
+  line-height: 1.2;
+  vertical-align: middle;
+}
+
+#tablaProductos td {
+  padding-left: 0.4rem;
+  padding-right: 0.4rem;
+}
+
+#tablaProductos th {
+  background-color: #000;
+  color: #fff;
+  font-weight: 600;
+}
+
+#tablaProductos .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+#tablaProductos .acciones {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+#tablaInactivos th {
+  background-color: #000;
+  color: #fff;
+  font-weight: 600;
+  padding: 3px;
+  gap: 0.3rem;
+}
+
+.detalle-fila {
+  display: table-row !important;
+}
+
+
+
+
     </style>
 </head>
+{% block scripts %}{% endblock %}
 
 <body>
     <!-- TOASTS -->
@@ -120,17 +251,14 @@
         </div>
     </nav>
 
-    <!-- CONTENIDO -->
     <div class="container mt-4 content-wrapper">
         {% block content %}{% endblock %}
     </div>
 
-    <!-- FOOTER -->
     <footer>
         <div>© {{ current_year if current_year is defined else '2025' }} DRTC - Todos los derechos reservados</div>
     </footer>
 
-    <!-- FLASH TOASTS -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <script>
@@ -176,5 +304,30 @@
             }
             </script>
 
+             
+
+
+      
+    
+            <!-- Modal de alerta personalizada -->
+        <div class="modal fade" id="modalStockInsuficiente" tabindex="-1" aria-labelledby="tituloStockInsuficiente" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-danger shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="tituloStockInsuficiente"> Stock insuficiente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body fw-medium">
+                No hay suficiente stock disponible para realizar esta salida.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Aceptar</button>
+            </div>
+            </div>
+        </div>
+        </div>
+    
+
 </body>
+
 </html>

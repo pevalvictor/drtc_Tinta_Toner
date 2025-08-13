@@ -4,9 +4,9 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 from dotenv import load_dotenv
 from datetime import datetime
+
 import os
 
-#  variables de entorno
 load_dotenv()
 
 db = SQLAlchemy()
@@ -37,4 +37,5 @@ def create_app():
     def inject_now():
         return {'now': datetime.now}
 
+    
     return app

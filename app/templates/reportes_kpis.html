@@ -25,12 +25,22 @@
             </div>
         </div>
     </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6 mb-4">
+            <canvas id="graficoOficinas"></canvas>
+        </div>
+        <div class="col-md-6 mb-4">
+            <canvas id="graficoProductos"></canvas>
+        </div>
+    </div>
 </div>
 
-<!-- GRAFICAS PARA REPORTES -->
+<!-- Librería Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Gráfico Donut
     const ctxDonut = document.getElementById('kpiDonut').getContext('2d');
     new Chart(ctxDonut, {
@@ -45,18 +55,13 @@ document.addEventListener('DOMContentLoaded', function() {
         options: {
             responsive: true,
             plugins: {
-                legend: {
-                    position: 'bottom',
-                },
-                title: {
-                    display: true,
-                    text: 'Distribución de Stock'
-                }
+                legend: { position: 'bottom' },
+                title: { display: true, text: 'Distribución de Stock' }
             }
         }
     });
 
-    // Gráfico Barras
+    // Gráfico: de Barras  de productos en Stock
     const ctxBar = document.getElementById('kpiBar').getContext('2d');
     new Chart(ctxBar, {
         type: 'bar',
@@ -72,10 +77,54 @@ document.addEventListener('DOMContentLoaded', function() {
             responsive: true,
             plugins: {
                 legend: { display: false },
-                title: {
-                    display: true,
-                    text: 'Cantidad de Productos según Estado'
-                }
+                title: { display: true, text: 'Cantidad de Productos según Estado' }
+            }
+        }
+    });
+
+    // Gráfico: Oficina que más consume
+    const ctxOficinas = document.getElementById('graficoOficinas').getContext('2d');
+    new Chart(ctxOficinas, {
+        type: 'bar',
+        data: {
+            labels: {{ consumo_por_oficina | map(attribute=0) | list | tojson }},
+            datasets: [{
+                label: 'Unidades Consumidas',
+                data: {{ consumo_por_oficina | map(attribute=1) | list | tojson }},
+                backgroundColor: '#007bff',
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: { display: true, text: 'Top Oficinas por Consumo' },
+                legend: { display: false }
+            }
+        }
+    });
+
+    const nombresProductos = {{ consumo_por_producto | map(attribute=0) | list | tojson }};
+    const modelosProductos = {{ consumo_por_producto | map(attribute=1) | list | tojson }};
+    const cantidadesProductos = {{ consumo_por_producto | map(attribute=2) | list | tojson }};
+
+    const etiquetasProductos = nombresProductos.map((nombre, i) => `${nombre} (${modelosProductos[i]})`);
+
+    const ctxProductos = document.getElementById('graficoProductos').getContext('2d');
+    new Chart(ctxProductos, {
+        type: 'bar',
+        data: {
+            labels: etiquetasProductos,
+            datasets: [{
+                label: 'Unidades Solicitadas',
+                data: cantidadesProductos,
+                backgroundColor: '#6610f2',
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: { display: true, text: 'Top Productos más Solicitados' },
+                legend: { display: false }
             }
         }
     });

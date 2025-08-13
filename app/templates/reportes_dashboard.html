@@ -4,7 +4,6 @@
 <div class="container mt-4">
     <h2 class="text-center mb-4">Reportes - Inventario Actual</h2>
 
-    <!-- Filtros -->
     <div class="row mb-3">
         <div class="col-md-3">
             <select id="filterTipo" class="form-select">
@@ -28,20 +27,21 @@
             <input type="date" id="filterFechaFin" class="form-control" placeholder="Fecha Fin">
         </div>
     </div>
+
     <div class="row mb-3">
         <div class="col-md-6">
-            <button id="applyFilters" class="btn btn-primary w-100">Aplicar Filtros</button>
+            <button id="applyFilters" class="btn btn-primary w-100 btn-sm"><i class="bi bi-funnel"></i> Aplicar Filtros</button>
         </div>
         <div class="col-md-6">
-            <button id="resetFilters" class="btn btn-secondary w-100">Restablecer Filtros</button>
+            <button id="resetFilters" class="btn btn-secondary w-100 btn-sm"><i class="bi bi-arrow-clockwise"></i> Restablecer Filtros</button>
         </div>
     </div>
 
     <div class="table-responsive">
-        <table id="reporteProductos" class="table table-bordered table-hover">
-            <thead class="table-dark">
+        <table id="reporteProductos" class="table table-bordered table-hover table-sm">
+            <thead class="table-dark text-center">
                 <tr>
-                    <th>ID</th>
+                    <th class="no-export">ID</th>
                     <th>Nombre</th>
                     <th>Tipo</th>
                     <th>Marca</th>
@@ -50,6 +50,7 @@
                     <th>Stock</th>
                     <th>Stock Mínimo</th>
                     <th>Unidad</th>
+                    <th>Fecha Ingreso</th>
                 </tr>
             </thead>
             <tbody>
@@ -64,6 +65,7 @@
                     <td>{{ producto.stock }}</td>
                     <td>{{ producto.stock_minimo }}</td>
                     <td>{{ producto.unidad or '-' }}</td>
+                    <td>{{ producto.fecha_ingreso.strftime('%Y-%m-%d') if producto.fecha_ingreso else '-' }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -71,8 +73,11 @@
     </div>
 </div>
 
-<!-- DataTables Buttons para exportar -->
+<!-- Estilos e íconos -->
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+<!-- Scripts de exportación -->
 <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
@@ -81,54 +86,96 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
 <script>
-$(document).ready(function() {
-    var table = $('#reporteProductos').DataTable({
-        dom: 'Bfrtip',
+$(document).ready(function () {
+    const fechaActual = new Date().toISOString().split('T')[0];
+    const table = $('#reporteProductos').DataTable({
+        dom: '<"d-flex justify-content-end mb-2"B><"row mb-2"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
         buttons: [
-            { extend: 'excelHtml5', text: 'Exportar a Excel', title: 'Inventario_DRTC' },
-            { extend: 'pdfHtml5', text: 'Exportar a PDF', title: 'Inventario_DRTC', orientation: 'landscape', pageSize: 'A4' },
-            { extend: 'print', text: 'Imprimir', title: 'Inventario DRTC' }
-        ],
-        language: { url: "//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json" }
-    });
-
-    function aplicarFiltros() {
-        var tipo = $('#filterTipo').val();
-        var marca = $('#filterMarca').val();
-        var fechaInicio = $('#filterFechaInicio').val();
-        var fechaFin = $('#filterFechaFin').val();
-
-        table.column(2).search(tipo, true, false);
-        table.column(3).search(marca, true, false);
-
-        table.rows().every(function() {
-            var stock = parseInt(this.data()[6]);
-            var stockMinimo = parseInt(this.data()[7]);
-            var mostrar = true;
-
-            var fechaIngreso = ''; //ME FALTA AGREGAR LA FECHA PARA LA TABLA
-
-            if (fechaInicio && fechaIngreso < fechaInicio) mostrar = false;
-            if (fechaFin && fechaIngreso > fechaFin) mostrar = false;
-
-            if (mostrar) {
-                $(this.node()).show();
-            } else {
-                $(this.node()).hide();
+            {
+                extend: 'excelHtml5',
+                text: '<i class="bi bi-file-earmark-excel text-success"></i>',
+                className: 'btn btn-outline-success btn-sm me-2',
+                title: 'INVENTARIO_DRTC_' + fechaActual,
+                customize: function (xlsx) {
+                    var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                    $('row c[r^="A"]', sheet).each(function () {
+                        if ($(this).text().trim() === "ID") $(this).remove();
+                    });
+                    $('row', sheet).each(function () {
+                        $('c[r^="A"]', this).first().remove();
+                    });
+                }
+            },
+            {
+                extend: 'pdfHtml5',
+                text: '<i class="bi bi-file-earmark-pdf text-danger"></i>',
+                className: 'btn btn-outline-danger btn-sm me-2',
+                title: '',
+                orientation: 'landscape',
+                pageSize: 'A4',
+                customize: function (doc) {
+                    doc.content.splice(0, 0, {
+                        text: 'REPORTE INVENTARIO - DRTC   Fecha: ' + fechaActual,
+                        alignment: 'center',
+                        margin: [0, 0, 0, 12],
+                        fontSize: 12,
+                        bold: true
+                    });
+                    doc.content[1].table.body.forEach(row => row.splice(0, 1));
+                }
+            },
+            {
+                extend: 'print',
+                text: '<i class="bi bi-printer"></i>',
+                className: 'btn btn-outline-dark btn-sm',
+                title: '',
+                customize: function (win) {
+                    $(win.document.body).prepend(
+                        '<h5 class="text-center">REPORTE INVENTARIO - DRTC   Fecha: ' + fechaActual + '</h5>'
+                    );
+                    $(win.document.body).find('table thead th:first-child, table tbody td:first-child').hide();
+                }
             }
-        });
-    }
-
-    $('#applyFilters').click(function() {
-        aplicarFiltros();
+        ],
+        language: { url: "//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json" },
+        pageLength: 10,
+        lengthMenu: [10, 25, 50],
+        columnDefs: [
+            {
+                targets: 0,
+                visible: true,
+                className: 'no-export'
+            }
+        ]
     });
 
-    $('#resetFilters').click(function() {
-        $('#filterTipo').val('');
-        $('#filterMarca').val('');
-        $('#filterFechaInicio').val('');
-        $('#filterFechaFin').val('');
-        table.search('').columns().search('').draw();
+    $('#applyFilters').click(function () {
+        const tipo = $('#filterTipo').val().toLowerCase();
+        const marca = $('#filterMarca').val().toLowerCase();
+        const fechaInicio = $('#filterFechaInicio').val();
+        const fechaFin = $('#filterFechaFin').val();
+
+        table.rows().every(function () {
+            const row = this.node();
+            const data = this.data();
+
+            const rowTipo = data[2].toLowerCase();
+            const rowMarca = data[3].toLowerCase();
+            const rowFecha = data[9];
+
+            let mostrar = true;
+            if (tipo && !rowTipo.includes(tipo)) mostrar = false;
+            if (marca && !rowMarca.includes(marca)) mostrar = false;
+            if (fechaInicio && rowFecha < fechaInicio) mostrar = false;
+            if (fechaFin && rowFecha > fechaFin) mostrar = false;
+
+            $(row).toggle(mostrar);
+        });
+    });
+
+    $('#resetFilters').click(function () {
+        $('#filterTipo, #filterMarca, #filterFechaInicio, #filterFechaFin').val('');
+        table.columns().search('').draw();
         table.rows().show();
     });
 });

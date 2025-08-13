@@ -1,47 +1,76 @@
 {% extends 'layout.html' %}
 {% block content %}
 <div class="container mt-4">
-    <h2 class="text-center mb-4">Ingreso de Productos</h2>
+  <h2 class="text-center mb-4">INGRESO DE PRODUCTOS</h2>
+
+  <div class="row justify-content-between align-items-center mb-3">
+    <div class="col-md-5">
+      <input type="text" id="busquedaGeneral" class="form-control form-control-sm" placeholder="Buscar por tipo, marca o modelo">
+    </div>
+    <div class="col-md-2">
+      <input type="date" id="fechaInicio" class="form-control form-control-sm">
+    </div>
+    <div class="col-md-2">
+      <input type="date" id="fechaFin" class="form-control form-control-sm">
+    </div>
+    
+    <div class="col-md-3 text-end">
+        <a href="/ingresos/reporte/pdf" class="btn btn-sm btn-outline-danger" title="Exportar PDF">
+          <i class="bi bi-file-earmark-pdf"></i>
+        </a>
+        <a href="/ingresos/reporte/excel" class="btn btn-sm btn-outline-success" title="Exportar Excel">
+          <i class="bi bi-file-earmark-excel"></i>
+        </a>
+    </div>
+  
+  </div>
+
 
     <div class="text-end mb-3">
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalIngreso">Registrar Ingreso</button>
     </div>
 
     <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
-            <thead class="table-dark text-center">
-                <tr>
-                    <th>ID</th>
-                    <th>Tipo</th>
-                    <th>Marca</th>
-                    <th>Modelo</th>
-                    <th>Cantidad</th>
-                    <th>Unidad</th>
-                    <th>Precio</th>
-                    <th>Total</th>
-                    <th>Fecha</th>
-                    <th>Acciones</th>
-                </tr>
+      <table class="table table-bordered table-hover align-middle" id="tablaIngresosDT">
+        <thead class="table-dark text-center">
+          <tr>
+              <th>ID</th>
+              <th>Tipo</th>
+              <th>Marca</th>
+              <th>Modelo</th>
+              <th>Cantidad</th>
+              <th>Unidad</th>
+              <th>Precio</th>
+              <th>Total</th>
+              <th>Fecha</th>
+              <th>Acciones</th>
+            </tr>
             </thead>
-            <tbody>
+            <tbody id="tbodyIngreso">
                 {% for ingreso in ingresos %}
-                <tr data-bs-toggle="collapse" data-bs-target="#detalle{{ ingreso.id_ingreso }}" class="accordion-toggle">
-                    <td>{{ ingreso.id_ingreso }}</td>
-                    <td>{{ ingreso.tipo_producto }}</td>
-                    <td>{{ ingreso.marca }}</td>
-                    <td>{{ ingreso.modelo }}</td>
-                    <td class="text-center">{{ ingreso.cantidad }}</td>
-                    <td>{{ ingreso.unidad }}</td>
-                    <td>S/. {{ ingreso.precio }}</td>
-                    <td>S/. {{ ingreso.total }}</td>
-                    <td>{{ ingreso.fecha_ingreso.strftime('%Y-%m-%d') }}</td>
-                    <td class="text-center">
-                        <form method="POST" action="{{ url_for('ingresos.eliminar_ingreso', id_ingreso=ingreso.id_ingreso) }}" style="display:inline-block;">
-                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar ingreso?')">Eliminar</button>
-                        </form>
-                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalEditarIngreso" onclick="cargarDatosEditar({{ ingreso.id_ingreso }})">Editar</button>
-                    </td>
+               <tr data-bs-toggle="collapse" data-bs-target="#detalle{{ ingreso.id_ingreso }}" class="accordion-toggle">
+                  <td>{{ ingreso.id_ingreso }}</td>
+                  <td>{{ ingreso.tipo_producto }}</td>
+                  <td>{{ ingreso.marca }}</td>
+                  <td>{{ ingreso.modelo }}</td>
+                  <td class="text-center">{{ ingreso.cantidad }}</td>
+                  <td>{{ ingreso.unidad }}</td>
+                  <td>S/. {{ ingreso.precio }}</td>
+                  <td>S/. {{ ingreso.total }}</td>
+                  <td>{{ ingreso.fecha_ingreso.strftime('%Y-%m-%d') }}</td>
+                  <td class="text-center">
+                    <button class="btn btn-sm btn-outline-primary me-1" title="Editar"
+                      onclick="cargarDatosEditar({{ ingreso.id_ingreso }})">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" title="Eliminar"
+                            onclick="eliminarIngreso({{ ingreso.id_ingreso }}, this)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
                 </tr>
+
+
                 <tr>
                     <td colspan="10">
                         <div id="detalle{{ ingreso.id_ingreso }}" class="collapse bg-light p-3">
@@ -177,46 +206,103 @@
   </div>
 </div>
 
+
+
+
+<!-- Modal Confirmar Eliminación -->
+<div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow rounded">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title"><i class="bi bi-trash me-2"></i> Confirmar eliminación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        ¿Estás seguro que deseas eliminar este ingreso?
+      </div>
+      <div class="modal-footer justify-content-center border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btnEliminarConfirmado">
+          <i class="bi bi-check-circle"></i> Sí, eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DataTables core -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+
+
+
 <script>
+
+let productosCargados = [];
+
 function cargarProductosExistentes() {
   fetch('/productos/lista')
     .then(res => res.json())
     .then(data => {
+      productosCargados = data;
       const tbody = document.getElementById('tablaProductos');
       tbody.innerHTML = '';
-      data.forEach(p => {
+
+      data.forEach((p, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${p.marca}</td>
           <td>${p.modelo}</td>
           <td>${p.color}</td>
           <td>${p.tipo}</td>
-          <td><button class="btn btn-sm btn-success" onclick='seleccionarProducto(${JSON.stringify(p)})'>Seleccionar</button></td>
+          <td><button class="btn btn-sm btn-success" onclick="seleccionarProducto(${index})">Seleccionar</button></td>
         `;
         tbody.appendChild(row);
       });
+    })
+    .catch(err => {
+      console.error("Error al cargar productos:", err);
+      mostrarToast("❌ Error al cargar productos", "danger");
     });
 }
 
-function seleccionarProducto(p) {
+function seleccionarProducto(index) {
+  const p = productosCargados[index];
+
+  // Llenar los campos
   document.getElementById('id_producto').value = p.id;
   document.getElementById('marca').value = p.marca;
   document.getElementById('modelo').value = p.modelo;
   document.getElementById('color').value = p.color;
   document.getElementById('unidad').value = p.unidad;
   document.getElementById('tipo_producto').value = p.tipo;
-  document.getElementById('modalBuscarProducto').querySelector('.btn-close').click();
+
+  // Cerrar modal de búsqueda
+  const modalBuscar = bootstrap.Modal.getInstance(document.getElementById('modalBuscarProducto'));
+  if (modalBuscar) modalBuscar.hide();
+
+  // Mostrar nuevamente el modal principal
+  const modalIngreso = new bootstrap.Modal(document.getElementById('modalIngreso'));
+  modalIngreso.show();
+
+  // Enfocar en el siguiente campo (cantidad)
+  document.getElementById('cantidad').focus();
+
+  // Mostrar mensaje
+  mostrarToast("✅ Producto cargado correctamente");
 }
 
-const modalBuscar = document.getElementById('modalBuscarProducto');
-modalBuscar.addEventListener('show.bs.modal', cargarProductosExistentes);
+// Evento para que cargue los productos al abrir el modal
+document.getElementById('modalBuscarProducto').addEventListener('show.bs.modal', cargarProductosExistentes);
 </script>
+
 
 
 
 <script>
 document.getElementById('formNuevoIngreso').addEventListener('submit', function (e) {
-  e.preventDefault(); // Evita recarga
+  e.preventDefault(); 
   const form = e.target;
   const formData = new FormData(form);
 
@@ -230,7 +316,7 @@ document.getElementById('formNuevoIngreso').addEventListener('submit', function 
       mostrarToast("✅ " + data.message);
       form.reset();
       document.getElementById('modalIngreso').querySelector('.btn-close').click();
-      setTimeout(() => window.location.reload(), 1000); // recarga para ver el nuevo ingreso
+      setTimeout(() => window.location.reload(), 100); 
     } else {
       mostrarToast("❌ Error: " + data.message);
     }
@@ -255,35 +341,6 @@ function mostrarToast(mensaje) {
   setTimeout(() => container.remove(), 4000);
 }
 </script>
-
-<script>
-function cargarDatosEditar(id) {
-  fetch(`/ingresos/obtener/${id}`)
-    .then(response => response.json())
-    .then(data => {
-      const form = document.getElementById('formEditarIngreso');
-      form.action = `/ingresos/editar/${id}`;
-      form.tipo_producto.value = data.tipo_producto;
-      form.marca.value = data.marca;
-      form.modelo.value = data.modelo;
-      form.color.value = data.color;
-      form.cantidad.value = data.cantidad;
-      form.unidad.value = data.unidad;
-      form.precio.value = data.precio;
-      form.total.value = (parseFloat(data.precio) * parseFloat(data.cantidad)).toFixed(2);
-      form.fecha_ingreso.value = data.fecha_ingreso;
-      form.stock.value = data.stock;
-      form.stock_minimo.value = data.stock_minimo;
-      form.responsable.value = data.responsable;
-      form.observaciones.value = data.observaciones;
-    })
-    .catch(error => {
-      console.error('Error al cargar datos del ingreso:', error);
-      alert('Error al cargar los datos para edición.');
-    });
-}
-</script>
-
 
 <script>
 function actualizarTotal() {
@@ -347,6 +404,186 @@ document.getElementById('modalEditarIngreso').addEventListener('shown.bs.modal',
 });
 </script>
 
+<script>
+document.getElementById('formEditarIngreso').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const form = e.target;
+  const formData = new FormData(form);
+
+  fetch(form.action, {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarIngreso'));
+      modal.hide();
+      mostrarToast(' ' + data.message);
+      setTimeout(() => location.reload(), 500);  
+    } else {
+      mostrarToast('❌ ' + data.message);
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    mostrarToast('❌ Error inesperado al guardar');
+  });
+});
+</script>
+
+
+<script>
+document.getElementById("busquedaGeneral").addEventListener("keyup", function () {
+  const valor = this.value.toLowerCase();
+  document.querySelectorAll("tbody tr").forEach(function (fila) {
+    const texto = fila.textContent.toLowerCase();
+    fila.style.display = texto.includes(valor) ? "" : "none";
+  });
+});
+</script>
+
+<script>
+  const modalElement = document.getElementById('modalEditarIngreso');
+  modalElement.addEventListener('hidden.bs.modal', () => {
+  document.body.classList.remove('modal-open');
+  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+});
+
+</script>
+
+
+
+
+<script>
+function filtrarIngresosPorFecha() {
+  const inicio = document.getElementById('fechaInicio').value;
+  const fin = document.getElementById('fechaFin').value;
+
+  fetch(`/ingresos/filtrar?inicio=${inicio}&fin=${fin}`)
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.getElementById('tbodyIngresos');
+      tbody.innerHTML = '';
+      data.forEach(ingreso => {
+        const fila = `
+          <tr>
+            <td>${ingreso.id_ingreso}</td>
+            <td>${ingreso.tipo_producto}</td>
+            <td>${ingreso.marca}</td>
+            <td>${ingreso.modelo}</td>
+            <td>${ingreso.cantidad}</td>
+            <td>${ingreso.unidad}</td>
+            <td>S/. ${ingreso.precio}</td>
+            <td>S/. ${ingreso.total}</td>
+            <td>${ingreso.fecha_ingreso}</td>
+            <td class="text-center">
+              <button class="btn btn-sm btn-outline-primary" title="Editar" onclick="cargarDatosEditar(${ingreso.id_ingreso})"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-danger ms-1" title="Eliminar" onclick="eliminarIngreso(${ingreso.id_ingreso})"><i class="bi bi-trash"></i></button>
+            </td>
+          </tr>
+        `;
+        tbody.insertAdjacentHTML('beforeend', fila);
+      });
+    });
+}
+
+document.getElementById('fechaInicio').addEventListener('change', filtrarIngresosPorFecha);
+document.getElementById('fechaFin').addEventListener('change', filtrarIngresosPorFecha);
+</script>
+
+
+
+
+<script>
+function eliminarIngreso(id, icono) {
+  if (!confirm("¿Eliminar este ingreso?")) return;
+
+  fetch(`/ingresos/eliminar/${id}`, {
+    method: 'POST'
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("Error al eliminar");
+    mostrarToast(" Ingreso eliminado correctamente");
+
+    const fila = icono.closest('tr');
+    if (fila) fila.remove();
+  })
+  .catch(error => {
+    console.error(error);
+    mostrarToast("Error al eliminar ingreso");
+  });
+}
+</script>
+
+
+
+
+<script>
+  let idIngresoAEliminar = null;
+  let botonEliminarActual = null;
+
+  function eliminarIngreso(id, boton) {
+    idIngresoAEliminar = id;
+    botonEliminarActual = boton;
+    const modal = new bootstrap.Modal(document.getElementById('modalConfirmarEliminar'));
+    modal.show();
+  }
+
+  document.getElementById('btnEliminarConfirmado').addEventListener('click', function () {
+    fetch(`/ingresos/eliminar/${idIngresoAEliminar}`, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+      const fila = botonEliminarActual.closest('tr');
+      const filaDetalle = fila.nextElementSibling;  
+      fila.remove();
+      if (filaDetalle && filaDetalle.querySelector('.collapse')) {
+        filaDetalle.remove();
+      }
+
+        mostrarToast(" Ingreso eliminado correctamente");
+      } else {
+        mostrarToast( data.message);
+      }
+
+      bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminar')).hide();
+    })
+    .catch(err => {
+      console.error(err);
+      mostrarToast("Error al eliminar ingreso");
+      bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminar')).hide();
+    });
+  });
+</script>
+
 
 
 {% endblock %}
+
+<script>
+$(document).ready(function () {
+  const tabla = $('#tablaIngresosDT').DataTable({
+    language: {
+      url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+    },
+    pageLength: 10,
+    lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+    ordering: true,
+    autoWidth: false,
+    responsive: true,
+    rowCallback: function(row, data, index){
+      if ($(row).find('td').length !== 10) {
+        $(row).hide();
+      }
+    }
+  });
+
+  $('#busquedaGeneral').on('keyup', function () {
+    tabla.search(this.value).draw();
+  });
+});
+</script>
